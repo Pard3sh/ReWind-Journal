@@ -20,3 +20,5 @@ ReWind Journal is a mobile journaling app built with Jetpack Compose (Material 3
 ## Notes
 
 This version intentionally focuses on the core journaling experience. Planned next steps include actual data persistence and AI-powered insights.
+
+## AI Reflection
