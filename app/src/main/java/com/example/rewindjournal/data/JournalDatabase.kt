@@ -10,6 +10,8 @@ import androidx.room.RoomDatabase
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
 
+    //not sure about this part below because Prof didn't discuss what to add to Database file
+    //need to work on getting migration logic in too
     companion object {
         @Volatile
         private var Instance: JournalDatabase? = null
