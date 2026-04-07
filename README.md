@@ -32,6 +32,9 @@ ReWind Journal is a mobile journaling app built with Jetpack Compose (Material 3
 <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/84496b26-43e1-4db7-84c7-f926dbcf9ef1" />
 
 ## Figma for work-in-progress screens
+<img width="410" height="770" alt="Screenshot 2026-04-07 at 3 05 45 PM" src="https://github.com/user-attachments/assets/0dac987f-1a4a-48da-a89e-dc8259a49d78" />
+<img width="390" height="753" alt="Screenshot 2026-04-07 at 3 05 51 PM" src="https://github.com/user-attachments/assets/6e9e9a61-2317-4a89-be99-a878a9965a25" />
+<img width="349" height="755" alt="Screenshot 2026-04-07 at 4 29 58 PM" src="https://github.com/user-attachments/assets/1209070b-917d-4c56-9e0b-cab075097911" />
 
 ## Notes
 
