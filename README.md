@@ -84,4 +84,4 @@ class JournalViewModel : ViewModel() {
 
 ## AI Reflection
 
-We used AI to aid in development, providing template starter code, assistance with working with Room, and coming up with theme advice. The AI generated code came with fluff and features that fell outside of our scope, so we rejected those suggestions. For example, it tried to suggest a journaling streak which we were not planning to implement. 
+We used AI to aid in development, providing template starter code, assistance with working with Room, organizing and modularizing the code, and coming up with theme advice. The AI generated code came with fluff and features that fell outside of our scope, so we rejected those suggestions. For example, it tried to suggest a journaling streak which we were not planning to implement. Otherwise, it was a valuable tool to suggest other tools and create boilerplate.
