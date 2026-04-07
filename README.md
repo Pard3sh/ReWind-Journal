@@ -4,7 +4,7 @@ ReWind Journal is a mobile journaling app built with Jetpack Compose (Material 3
 
 ## Current Features
 
-- Home screen with a daily affirmation & weather!
+- Home screen with a daily affirmation!
 - Basic journal entry composer
 - Sample folders 
 - Recent moments section 
