@@ -40,4 +40,48 @@ ReWind Journal is a mobile journaling app built with Jetpack Compose (Material 3
 
 This version intentionally focuses on the core journaling experience. Planned next steps include actual data persistence and AI-powered insights.
 
+## View Models
+
+Act as a layer between the data and the UI. 
+```
+data class FolderSummary(
+    val name: String,
+    val entryCount: Int,
+    val description: String
+)
+
+data class TimelineMoment(
+    val title: String,
+    val subtitle: String
+)
+
+class JournalViewModel : ViewModel() {
+    private val _folders = mutableStateListOf(
+        FolderSummary("Senior Year", 12, "Classes, milestones, and end-of-year reflections."),
+        FolderSummary("Italy Trip", 4, "Travel notes and memorable moments."),
+        FolderSummary("Internship", 7, "Wins, lessons, and weekly takeaways.")
+    )
+    val folders: List<FolderSummary> = _folders
+
+    private val _entries = mutableStateListOf(
+        TimelineMoment("Proposal submitted", "Today · Senior Year"),
+        TimelineMoment("Commute voice memo", "Yesterday · Internship"),
+        TimelineMoment("Booked Florence train", "3 days ago · Italy Trip")
+    )
+    val entries: List<TimelineMoment> = _entries
+
+    fun addEntry(title: String, folder: String = "Daily Journal") {
+        _entries.add(
+            0,
+            TimelineMoment(
+                title = title.ifBlank { "Untitled entry" },
+                subtitle = "Just now · $folder"
+            )
+        )
+    }
+}
+```
+
 ## AI Reflection
+
+We used AI to aid in development, providing template starter code, assistance with working with Room, and coming up with theme advice. The AI generated code came with fluff and features that fell outside of our scope, so we rejected those suggestions. For example, it tried to suggest a journaling streak which we were not planning to implement. 
