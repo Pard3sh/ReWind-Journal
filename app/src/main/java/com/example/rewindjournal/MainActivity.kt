@@ -54,7 +54,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RewindJournalApp(viewModel: JournalViewModel = viewModel()) {
+fun RewindJournalApp(viewModel: JournalViewModel = viewModel(factory = JournalViewModel.Factory)) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
 
     Scaffold(

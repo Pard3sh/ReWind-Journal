@@ -18,9 +18,12 @@ import com.example.rewindjournal.ui.components.AffirmationCard
 import com.example.rewindjournal.ui.components.SectionHeader
 import com.example.rewindjournal.ui.components.TimelineCard
 
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+
 @Composable
 fun HomeScreen(viewModel: JournalViewModel) {
-    val entries = viewModel.entries
+    val entries by viewModel.entries.collectAsState()
 
     LazyColumn(
         modifier = Modifier

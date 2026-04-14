@@ -2,11 +2,23 @@ package com.example.rewindjournal.data
 
 import androidx.room.Dao
 import androidx.room.Delete
+import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Relation
+import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+
+data class EntryWithFolder(
+    @Embedded val entry: JournalEntry,
+    @Relation(
+        parentColumn = "folderId",
+        entityColumn = "id"
+    )
+    val folder: Folder?
+)
 
 @Dao
 interface JournalDao {
@@ -36,6 +48,10 @@ interface JournalDao {
 
     @Query("SELECT * FROM journal_entries ORDER BY timestamp DESC")
     fun getAllEntries(): Flow<List<JournalEntry>>
+
+    @Transaction
+    @Query("SELECT * FROM journal_entries ORDER BY timestamp DESC")
+    fun getAllEntriesWithFolder(): Flow<List<EntryWithFolder>>
 
     @Query("SELECT * FROM journal_entries WHERE folderId = :folderId ORDER BY timestamp DESC")
     fun getEntriesByFolder(folderId: Long): Flow<List<JournalEntry>>

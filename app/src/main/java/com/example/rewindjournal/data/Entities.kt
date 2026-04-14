@@ -28,9 +28,10 @@ data class Folder(
 )
 data class JournalEntry(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val folderId: Long, //change it can be in a general folder
+    val folderId: Long? = null,
     val title: String,
     val body: String,
     val timestamp: Long = System.currentTimeMillis(),
-    val location: Location? = null //not all users want to give us location
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )

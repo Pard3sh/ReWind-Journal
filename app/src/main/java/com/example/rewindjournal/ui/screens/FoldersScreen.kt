@@ -14,9 +14,12 @@ import com.example.rewindjournal.ui.viewmodel.JournalViewModel
 import com.example.rewindjournal.ui.components.FolderCard
 import com.example.rewindjournal.ui.components.SectionHeader
 
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+
 @Composable
 fun FoldersScreen(viewModel: JournalViewModel) {
-    val folders = viewModel.folders
+    val folders by viewModel.folders.collectAsState()
 
     LazyColumn(
         modifier = Modifier

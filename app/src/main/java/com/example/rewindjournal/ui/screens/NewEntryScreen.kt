@@ -41,7 +41,7 @@ fun NewEntryScreen(viewModel: JournalViewModel, onSaveComplete: () -> Unit) {
             onBodyChange = { entryBody = it },
             onSaveClick = {
                 if (entryTitle.isNotBlank() || entryBody.isNotBlank()) {
-                    viewModel.addEntry(entryTitle)
+                    viewModel.addEntry(entryTitle, entryBody)
                     entryTitle = ""
                     entryBody = ""
                     onSaveComplete()

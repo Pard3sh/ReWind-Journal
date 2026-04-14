@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 class JournalRepository(private val journalDao: JournalDao) {
     val allFolders: Flow<List<Folder>> = journalDao.getAllFolders()
     val allEntries: Flow<List<JournalEntry>> = journalDao.getAllEntries()
+    val allEntriesWithFolder: Flow<List<EntryWithFolder>> = journalDao.getAllEntriesWithFolder()
 
     fun getEntriesByFolder(folderId: Long): Flow<List<JournalEntry>> = 
         journalDao.getEntriesByFolder(folderId)
