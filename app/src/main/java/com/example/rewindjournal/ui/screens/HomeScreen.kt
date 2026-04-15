@@ -20,6 +20,7 @@ import com.example.rewindjournal.ui.components.TimelineCard
 
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.example.rewindjournal.ui.components.AffirmationScreen
 
 @Composable
 fun HomeScreen(viewModel: JournalViewModel) {
@@ -44,6 +45,7 @@ fun HomeScreen(viewModel: JournalViewModel) {
 
         item {
             AffirmationCard()
+            AffirmationScreen()
         }
 
         item {

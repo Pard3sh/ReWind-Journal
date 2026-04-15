@@ -35,7 +35,11 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.example.rewindjournal.ui.viewmodel.FolderSummary
 import com.example.rewindjournal.ui.viewmodel.TimelineMoment
-
+import androidx.compose.runtime.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.rewindjournal.ui.components.AffirmationUiState
+import com.example.rewindjournal.ui.viewmodel.AffirmationViewModel
+import androidx.compose.runtime.getValue
 @Composable
 fun AffirmationCard() {
     Card(
@@ -57,6 +61,43 @@ fun AffirmationCard() {
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Spacer(modifier = Modifier.height(12.dp))
+        }
+    }
+}
+
+
+@Composable
+fun AffirmationScreen(viewModel: AffirmationViewModel = viewModel()) {
+
+    val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchAffirmation()
+    }
+
+    Column {
+
+        when (uiState) {
+
+            is AffirmationUiState.Loading -> {
+                Text("Loading...")
+            }
+
+            is AffirmationUiState.Success -> {
+                val text = (uiState as AffirmationUiState.Success).text
+                Text(text)
+            }
+
+            is AffirmationUiState.Error -> {
+                val message = (uiState as AffirmationUiState.Error).message
+                Text("Error: $message")
+            }
+        }
+
+        Button(onClick = {
+            viewModel.fetchAffirmation()
+        }) {
+            Text("New Affirmation")
         }
     }
 }
