@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.rewindjournal.JournalApplication
+import com.example.rewindjournal.data.Folder
 import com.example.rewindjournal.data.JournalEntry
 import com.example.rewindjournal.data.JournalRepository
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -23,13 +25,15 @@ data class FolderSummary(
     val id: Long,
     val name: String,
     val entryCount: Int,
-    val description: String
+    val description: String,
+    val color: Int
 )
 
 data class TimelineMoment(
     val id: Long,
     val title: String,
-    val subtitle: String
+    val subtitle: String,
+    val body: String = ""
 )
 
 class JournalViewModel(private val repository: JournalRepository) : ViewModel() {
@@ -43,7 +47,8 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
                 id = folder.id,
                 name = folder.name,
                 entryCount = entries.count { it.folderId == folder.id },
-                description = folder.description
+                description = folder.description,
+                color = folder.color
             )
         }
     }.stateIn(
@@ -58,7 +63,8 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
                 TimelineMoment(
                     id = item.entry.id,
                     title = item.entry.title,
-                    subtitle = formatSubtitle(item.entry.timestamp, item.folder?.name)
+                    subtitle = formatSubtitle(item.entry.timestamp, item.folder?.name),
+                    body = item.entry.body
                 )
             }
         }
@@ -74,10 +80,46 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
                 JournalEntry(
                     title = title.ifBlank { "Untitled entry" },
                     body = body,
-//                    folderId = folderId?:0L,
                     folderId = folderId,
                     timestamp = System.currentTimeMillis()
                 )
+            )
+        }
+    }
+
+    fun addFolder(name: String, description: String, color: Int) {
+        viewModelScope.launch {
+            repository.insertFolder(
+                Folder(
+                    name = name,
+                    description = description,
+                    color = color
+                )
+            )
+        }
+    }
+
+    fun getEntriesByFolder(folderId: Long): Flow<List<TimelineMoment>> {
+        return repository.getEntriesByFolder(folderId).map { entries ->
+            entries.map { entry ->
+                TimelineMoment(
+                    id = entry.id,
+                    title = entry.title,
+                    subtitle = formatSubtitle(entry.timestamp, null),
+                    body = entry.body
+                )
+            }
+        }
+    }
+
+    suspend fun getEntryById(entryId: Long): TimelineMoment? {
+        return repository.getEntryById(entryId)?.let { entry ->
+            val folder = entry.folderId?.let { repository.getFolderById(it) }
+            TimelineMoment(
+                id = entry.id,
+                title = entry.title,
+                subtitle = formatSubtitle(entry.timestamp, folder?.name),
+                body = entry.body
             )
         }
     }
@@ -91,7 +133,7 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
             days == 0L -> "Today"
             days == 1L -> "Yesterday"
             days < 7L -> "$days days ago"
-            else -> SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(timestamp))
+            else -> SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(timestamp))
         }
 
         return if (folderName != null) {
