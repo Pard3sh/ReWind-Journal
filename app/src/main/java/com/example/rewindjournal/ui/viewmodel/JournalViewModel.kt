@@ -10,6 +10,7 @@ import com.example.rewindjournal.data.Folder
 import com.example.rewindjournal.data.JournalEntry
 import com.example.rewindjournal.data.JournalRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -33,16 +34,20 @@ data class TimelineMoment(
     val id: Long,
     val title: String,
     val subtitle: String,
-    val body: String = ""
+    val body: String = "",
+    val folderId: Long? = null
 )
 
 class JournalViewModel(private val repository: JournalRepository) : ViewModel() {
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery
 
     val folders: StateFlow<List<FolderSummary>> = combine(
         repository.allFolders,
         repository.allEntries
     ) { folders, entries ->
-        folders.map { folder ->
+        val folderSummaries = folders.map { folder ->
             FolderSummary(
                 id = folder.id,
                 name = folder.name,
@@ -51,28 +56,51 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
                 color = folder.color
             )
         }
+        
+        // Virtual General folder (id = -1)
+        val generalCount = entries.count { it.folderId == null }
+        val generalFolder = FolderSummary(
+            id = -1,
+            name = "General",
+            entryCount = generalCount,
+            description = "Unorganized reflections and quick notes.",
+            color = 0xFF9E9E9E.toInt()
+        )
+        
+        listOf(generalFolder) + folderSummaries
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
 
-    val entries: StateFlow<List<TimelineMoment>> = repository.allEntriesWithFolder
-        .map { entriesWithFolder ->
-            entriesWithFolder.map { item ->
+    val entries: StateFlow<List<TimelineMoment>> = combine(
+        repository.allEntriesWithFolder,
+        _searchQuery
+    ) { entriesWithFolder, query ->
+        entriesWithFolder
+            .filter { 
+                it.entry.title.contains(query, ignoreCase = true) || 
+                it.entry.body.contains(query, ignoreCase = true) 
+            }
+            .map { item ->
                 TimelineMoment(
                     id = item.entry.id,
                     title = item.entry.title,
                     subtitle = formatSubtitle(item.entry.timestamp, item.folder?.name),
-                    body = item.entry.body
+                    body = item.entry.body,
+                    folderId = item.entry.folderId
                 )
             }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
 
     fun addEntry(title: String, body: String = "", folderId: Long? = null) {
         viewModelScope.launch {
@@ -80,10 +108,25 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
                 JournalEntry(
                     title = title.ifBlank { "Untitled entry" },
                     body = body,
-                    folderId = folderId,
+                    folderId = if (folderId == -1L) null else folderId,
                     timestamp = System.currentTimeMillis()
                 )
             )
+        }
+    }
+
+    fun updateEntry(id: Long, title: String, body: String, folderId: Long?) {
+        viewModelScope.launch {
+            repository.getEntryById(id)?.let { existingEntry ->
+                repository.updateEntry(
+                    existingEntry.copy(
+                        title = title,
+                        body = body,
+                        folderId = if (folderId == -1L) null else folderId,
+                        timestamp = System.currentTimeMillis()
+                    )
+                )
+            }
         }
     }
 
@@ -100,15 +143,27 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
     }
 
     fun getEntriesByFolder(folderId: Long): Flow<List<TimelineMoment>> {
-        return repository.getEntriesByFolder(folderId).map { entries ->
-            entries.map { entry ->
-                TimelineMoment(
-                    id = entry.id,
-                    title = entry.title,
-                    subtitle = formatSubtitle(entry.timestamp, null),
-                    body = entry.body
-                )
-            }
+        val targetEntries = if (folderId == -1L) {
+            repository.allEntries.map { it.filter { entry -> entry.folderId == null } }
+        } else {
+            repository.getEntriesByFolder(folderId)
+        }
+
+        return combine(targetEntries, _searchQuery) { entries, query ->
+            entries
+                .filter { 
+                    it.title.contains(query, ignoreCase = true) || 
+                    it.body.contains(query, ignoreCase = true) 
+                }
+                .map { entry ->
+                    TimelineMoment(
+                        id = entry.id,
+                        title = entry.title,
+                        subtitle = formatSubtitle(entry.timestamp, null),
+                        body = entry.body,
+                        folderId = entry.folderId
+                    )
+                }
         }
     }
 
@@ -119,7 +174,8 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
                 id = entry.id,
                 title = entry.title,
                 subtitle = formatSubtitle(entry.timestamp, folder?.name),
-                body = entry.body
+                body = entry.body,
+                folderId = entry.folderId
             )
         }
     }
