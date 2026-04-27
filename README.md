@@ -25,10 +25,13 @@ ReWind Journal is a mobile journaling app built with Jetpack Compose (Material 3
 2. Folders Screen
 <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/4843ed48-3807-4fdf-adca-1524b1179092" />
 
-3. New Entry Screen
+3. New Folder Screen
+<img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/cb0f2a45-29ed-47fd-a306-f3971ed8f8c6" />
+
+5. New Entry Screen
 <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/3b23a48f-7b8f-4c82-ab3a-e1fff064d36f" />
 
-4. Timeline Screen
+6. Timeline Screen
 <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/84496b26-43e1-4db7-84c7-f926dbcf9ef1" />
 
 ## Figma for work-in-progress screens
