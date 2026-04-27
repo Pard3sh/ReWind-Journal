@@ -41,8 +41,9 @@ import com.example.rewindjournal.ui.components.AffirmationUiState
 import com.example.rewindjournal.ui.viewmodel.AffirmationViewModel
 import androidx.compose.runtime.getValue
 @Composable
-fun AffirmationCard() {
+fun AffirmationCard(affirmation: String) {
     Card(
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -56,7 +57,7 @@ fun AffirmationCard() {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "You are allowed to notice how far you have already come.",
+                text = affirmation,
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
@@ -69,35 +70,24 @@ fun AffirmationCard() {
 @Composable
 fun AffirmationScreen(viewModel: AffirmationViewModel = viewModel()) {
 
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState = viewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.fetchAffirmation()
     }
 
-    Column {
+    when (val state = uiState.value) {
 
-        when (uiState) {
-
-            is AffirmationUiState.Loading -> {
-                Text("Loading...")
-            }
-
-            is AffirmationUiState.Success -> {
-                val text = (uiState as AffirmationUiState.Success).text
-                Text(text)
-            }
-
-            is AffirmationUiState.Error -> {
-                val message = (uiState as AffirmationUiState.Error).message
-                Text("Error: $message")
-            }
+        is AffirmationUiState.Loading -> {
+            Text("Loading...")
         }
 
-        Button(onClick = {
-            viewModel.fetchAffirmation()
-        }) {
-            Text("New Affirmation")
+        is AffirmationUiState.Success -> {
+            AffirmationCard(affirmation = state.text)
+        }
+
+        is AffirmationUiState.Error -> {
+            Text(state.message)
         }
     }
 }

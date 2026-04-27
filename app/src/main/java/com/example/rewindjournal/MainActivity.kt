@@ -26,6 +26,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -38,7 +39,12 @@ import com.example.rewindjournal.ui.screens.HomeScreen
 import com.example.rewindjournal.ui.screens.NewEntryScreen
 import com.example.rewindjournal.ui.screens.TimelineScreen
 import com.example.rewindjournal.ui.theme.RewindJournalTheme
+import com.example.rewindjournal.ui.viewmodel.AuthViewModel
 import com.example.rewindjournal.ui.viewmodel.JournalViewModel
+import com.example.rewindjournal.ui.screens.RootScreen
+import androidx.compose.ui.platform.LocalContext
+import com.example.rewindjournal.data.JournalDatabase
+import com.example.rewindjournal.data.JournalRepository
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,7 +52,26 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             RewindJournalTheme {
-                RewindJournalApp()
+
+
+                val authViewModel: AuthViewModel = viewModel()
+
+                val context = LocalContext.current
+
+                val journalViewModel = remember {
+                    val db = JournalDatabase.getDatabase(context)
+
+                    val repository = JournalRepository(db.journalDao())
+
+                    JournalViewModel(repository)
+                }
+
+                RootScreen(
+                    authViewModel = authViewModel,
+                    journalViewModel = journalViewModel
+                )
+                // commented out bc testing splash screen/ Oauth
+                // RewindJournalApp()
             }
         }
     }

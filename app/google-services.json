@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "478996599952",
+    "project_id": "final-project-494621",
+    "storage_bucket": "final-project-494621.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:478996599952:android:0c75460753b5a41a337415",
+        "android_client_info": {
+          "package_name": "com.example.rewindjournal"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "478996599952-5qicudej359pm7ik7skmsid7epciueq4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.rewindjournal",
+            "certificate_hash": "515843b68437a9556fb938636dac7c8bae9cf7ab"
+          }
+        },
+        {
+          "client_id": "478996599952-6ovojhtva0bdjjipi7d50q455j8o061p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiZgRw7yCQNVwYNWSFxEEa9Bqf5QYsP5U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "478996599952-6ovojhtva0bdjjipi7d50q455j8o061p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

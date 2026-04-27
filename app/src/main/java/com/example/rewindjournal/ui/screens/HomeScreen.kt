@@ -44,7 +44,6 @@ fun HomeScreen(viewModel: JournalViewModel) {
         }
 
         item {
-            AffirmationCard()
             AffirmationScreen()
         }
 
