@@ -8,9 +8,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.rewindjournal.ui.viewmodel.JournalViewModel
+import com.example.rewindjournal.ui.viewmodel.TimelineMoment
 
 @Composable
-fun TimelineScreen(viewModel: JournalViewModel) {
+fun TimelineScreen(
+    viewModel: JournalViewModel,
+    onEntryClick: (TimelineMoment) -> Unit = {}
+) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center

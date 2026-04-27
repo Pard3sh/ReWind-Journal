@@ -1,6 +1,5 @@
 package com.example.rewindjournal.data
 
-import android.location.Location
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.ForeignKey
@@ -11,6 +10,7 @@ data class Folder(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val description: String = "",
+    val color: Int = 0xFF6200EE.toInt(), // Default color (Purple)
     val timestamp: Long = System.currentTimeMillis()
 )
 

@@ -6,9 +6,11 @@ ReWind Journal is a mobile journaling app built with Jetpack Compose (Material 3
 
 - Home screen with a daily affirmation!
 - Basic journal entry composer
-- Sample folders 
+- Sample folders
 - Recent moments section 
-- Bottom navigation 
+- Bottom navigation
+- Folder system with the ability to create, update, and delete folders
+- Journal entries with options to update and delete entries
 
 
 ## How to Run
@@ -20,18 +22,26 @@ ReWind Journal is a mobile journaling app built with Jetpack Compose (Material 3
 ## Screenshots
 
 1. Home Screen
-<img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/b31ccef4-1615-4701-9821-81dba63ce5e4" />
+<!-- <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/b31ccef4-1615-4701-9821-81dba63ce5e4" /> -->
+<img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/81789cf6-5d76-423a-a896-fe1bc100f271" />
 
 2. Folders Screen
-<img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/4843ed48-3807-4fdf-adca-1524b1179092" />
+<!-- <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/4843ed48-3807-4fdf-adca-1524b1179092" /> -->
+<img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/7989ae5e-24f4-4725-9ff3-56ee5aacbfe6" />
 
-3. New Entry Screen
-<img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/3b23a48f-7b8f-4c82-ab3a-e1fff064d36f" />
+3. New Folder Screen
+<img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/cb0f2a45-29ed-47fd-a306-f3971ed8f8c6" />
 
-4. Timeline Screen
-<img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/84496b26-43e1-4db7-84c7-f926dbcf9ef1" />
+4. New Entry Screen
+<!-- <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/3b23a48f-7b8f-4c82-ab3a-e1fff064d36f" /> -->
+<img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/93e69b5c-21c7-41ea-a118-95ce4894aa24" />
 
-## Figma for work-in-progress screens
+5. Timeline Screen
+<!-- <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/84496b26-43e1-4db7-84c7-f926dbcf9ef1" /> -->
+<img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/2d51b7cd-8033-4090-9cb6-c728f2c24118" />
+
+
+## Figma for work-in-progress screens 
 <img width="410" height="770" alt="Screenshot 2026-04-07 at 3 05 45 PM" src="https://github.com/user-attachments/assets/0dac987f-1a4a-48da-a89e-dc8259a49d78" />
 <img width="390" height="753" alt="Screenshot 2026-04-07 at 3 05 51 PM" src="https://github.com/user-attachments/assets/6e9e9a61-2317-4a89-be99-a878a9965a25" />
 <img width="349" height="755" alt="Screenshot 2026-04-07 at 4 29 58 PM" src="https://github.com/user-attachments/assets/1209070b-917d-4c56-9e0b-cab075097911" />
@@ -40,44 +50,131 @@ ReWind Journal is a mobile journaling app built with Jetpack Compose (Material 3
 
 This version intentionally focuses on the core journaling experience. Planned next steps include actual data persistence and AI-powered insights.
 
-## View Models
+## View Models (full code removed to shorten ReadMe)
 
 Act as a layer between the data and the UI. 
 ```
 data class FolderSummary(
+    val id: Long,
     val name: String,
     val entryCount: Int,
-    val description: String
+    val description: String,
+    val color: Int
 )
 
 data class TimelineMoment(
+    val id: Long,
     val title: String,
-    val subtitle: String
+    val subtitle: String,
+    val body: String = "",
+    val folderId: Long? = null,
+    val folderColor: Int? = null
 )
 
-class JournalViewModel : ViewModel() {
-    private val _folders = mutableStateListOf(
-        FolderSummary("Senior Year", 12, "Classes, milestones, and end-of-year reflections."),
-        FolderSummary("Italy Trip", 4, "Travel notes and memorable moments."),
-        FolderSummary("Internship", 7, "Wins, lessons, and weekly takeaways.")
-    )
-    val folders: List<FolderSummary> = _folders
+class JournalViewModel(private val repository: JournalRepository) : ViewModel() {
 
-    private val _entries = mutableStateListOf(
-        TimelineMoment("Proposal submitted", "Today · Senior Year"),
-        TimelineMoment("Commute voice memo", "Yesterday · Internship"),
-        TimelineMoment("Booked Florence train", "3 days ago · Italy Trip")
-    )
-    val entries: List<TimelineMoment> = _entries
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery
 
-    fun addEntry(title: String, folder: String = "Daily Journal") {
-        _entries.add(
-            0,
-            TimelineMoment(
-                title = title.ifBlank { "Untitled entry" },
-                subtitle = "Just now · $folder"
+    val folders: StateFlow<List<FolderSummary>> = combine(
+        repository.allFolders,
+        repository.allEntries,
+        _searchQuery
+    ) { folders, entries, query ->
+        val folderSummaries = folders.map { folder ->
+            FolderSummary(
+                id = folder.id,
+                name = folder.name,
+                entryCount = entries.count { it.folderId == folder.id },
+                description = folder.description,
+                color = folder.color
             )
+        }
+        
+        // Virtual General folder (id = -1)
+        val generalCount = entries.count { it.folderId == null }
+        val generalFolder = FolderSummary(
+            id = -1,
+            name = "General",
+            entryCount = generalCount,
+            description = "Unorganized reflections and quick notes.",
+            color = 0xFF9E9E9E.toInt()
         )
+        
+        val allFolders = listOf(generalFolder) + folderSummaries
+        
+        if (query.isBlank()) {
+            allFolders
+        } else {
+            allFolders.filter { 
+                it.name.contains(query, ignoreCase = true) || 
+                it.description.contains(query, ignoreCase = true) 
+            }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val entries: StateFlow<List<TimelineMoment>> = combine(
+        repository.allEntriesWithFolder,
+        _searchQuery
+    ) { entriesWithFolder, query ->
+        val mapped = entriesWithFolder.map { item ->
+            TimelineMoment(
+                id = item.entry.id,
+                title = item.entry.title,
+                subtitle = formatSubtitle(item.entry.timestamp, item.folder?.name),
+                body = item.entry.body,
+                folderId = item.entry.folderId,
+                folderColor = item.folder?.color ?: 0xFF9E9E9E.toInt()
+            )
+        }
+        
+        if (query.isBlank()) {
+            mapped
+        } else {
+            mapped.filter { 
+                it.title.contains(query, ignoreCase = true) || 
+                it.body.contains(query, ignoreCase = true)
+            }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun addEntry(title: String, body: String = "", folderId: Long? = null) {...}
+
+    fun updateEntry(id: Long, title: String, body: String, folderId: Long?) {...}
+
+    fun deleteEntry(id: Long) {...}
+
+    fun addFolder(name: String, description: String, color: Int) {...}
+
+    fun updateFolder(id: Long, name: String, description: String, color: Int) {...}
+
+    fun deleteFolder(id: Long) {...}
+
+    fun getEntriesByFolder(folderId: Long): Flow<List<TimelineMoment>> {...}
+
+    suspend fun getEntryById(entryId: Long): TimelineMoment? {...}
+
+    private fun formatSubtitle(timestamp: Long, folderName: String?): String {...}
+
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as JournalApplication)
+                JournalViewModel(application.repository)
+            }
+        }
     }
 }
 ```
