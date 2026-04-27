@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +48,13 @@ fun NewEntryScreen(
             onFolderSelected = { selectedFolderId = it },
             isEditing = editingEntry != null,
             onCancelEdit = onCancel,
+            onDeleteClick = if (editingEntry != null) {
+
+                {
+                    viewModel.deleteEntry(editingEntry.id)
+                    onSaveComplete()
+                }
+            } else null,
             onSaveClick = {
                 if (entryTitle.isNotBlank() || entryBody.isNotBlank()) {
                     if (editingEntry != null) {

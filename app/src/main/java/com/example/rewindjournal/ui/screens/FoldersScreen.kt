@@ -22,8 +22,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CreateNewFolder
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.rewindjournal.ui.components.FolderCard
 import com.example.rewindjournal.ui.components.SearchBar
@@ -56,7 +59,11 @@ fun FoldersScreen(
 ) {
     var selectedFolder by remember { mutableStateOf<FolderSummary?>(null) }
     val folders by viewModel.folders.collectAsState()
+    val entries by viewModel.entries.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+
     var showNewFolderDialog by remember { mutableStateOf(false) }
+    var folderToEdit by remember { mutableStateOf<FolderSummary?>(null) }
 
     if (selectedFolder != null) {
         FolderDetailView(
@@ -67,11 +74,29 @@ fun FoldersScreen(
         )
     } else {
         if (showNewFolderDialog) {
-            NewFolderDialog(
+            FolderDialog(
                 onDismiss = { showNewFolderDialog = false },
                 onConfirm = { name, desc, color ->
                     viewModel.addFolder(name, desc, color)
                     showNewFolderDialog = false
+                }
+            )
+        }
+
+        if (folderToEdit != null) {
+            FolderDialog(
+                initialName = folderToEdit!!.name,
+                initialDescription = folderToEdit!!.description,
+                initialColor = Color(folderToEdit!!.color),
+                isEditing = true,
+                onDismiss = { folderToEdit = null },
+                onConfirm = { name, desc, color ->
+                    viewModel.updateFolder(folderToEdit!!.id, name, desc, color)
+                    folderToEdit = null
+                },
+                onDelete = {
+                    viewModel.deleteFolder(folderToEdit!!.id)
+                    folderToEdit = null
                 }
             )
         }
@@ -98,11 +123,74 @@ fun FoldersScreen(
                 )
             }
 
-            items(folders) { folder ->
-                FolderCard(
-                    folder = folder,
-                    onClick = { selectedFolder = folder }
+            item {
+                SearchBar(
+                    query = searchQuery,
+                    onQueryChange = { viewModel.setSearchQuery(it) }
                 )
+            }
+
+            if (searchQuery.isNotEmpty()) {
+                if (folders.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "Matching Folders",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                    items(folders) { folder ->
+                        FolderCard(
+                            folder = folder,
+                            onClick = { selectedFolder = folder },
+                            onEditClick = { folderToEdit = folder }
+                        )
+                    }
+                }
+
+                // if the search entry is NOT empty, then show possible entries related to the query
+                // Otherwise act as a regular folder page!
+                if (entries.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "Matching Entries",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                    items(entries) { entry ->
+                        TimelineCard(
+                            moment = entry,
+                            onClick = { onEntryClick(entry) },
+                            overrideColor = entry.folderColor
+                        )
+                    }
+                }
+
+                if (folders.isEmpty() && entries.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "No matches found for \"$searchQuery\"",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            } else {
+                items(folders) { folder ->
+                    FolderCard(
+                        folder = folder,
+                        onClick = { selectedFolder = folder },
+                        onEditClick = { folderToEdit = folder }
+                    )
+                }
             }
 
             item { Spacer(modifier = Modifier.height(88.dp)) }
@@ -118,7 +206,6 @@ fun FolderDetailView(
     onEntryClick: (TimelineMoment) -> Unit
 ) {
     val entries by viewModel.getEntriesByFolder(folder.id).collectAsState(initial = emptyList())
-    val searchQuery by viewModel.searchQuery.collectAsState()
     var showQuickAdd by remember { mutableStateOf(false) }
 
     BackHandler(onBack = onBack)
@@ -181,13 +268,6 @@ fun FolderDetailView(
                 }
             }
 
-            item {
-                SearchBar(
-                    query = searchQuery,
-                    onQueryChange = { viewModel.setSearchQuery(it) }
-                )
-            }
-
             if (entries.isEmpty()) {
                 item {
                     Box(
@@ -197,9 +277,7 @@ fun FolderDetailView(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (searchQuery.isEmpty()) 
-                                "No entries in this folder yet." 
-                            else "No results for \"$searchQuery\"",
+                            "No entries in this folder yet.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -217,12 +295,17 @@ fun FolderDetailView(
 }
 
 @Composable
-fun NewFolderDialog(
+fun FolderDialog(
+    initialName: String = "",
+    initialDescription: String = "",
+    initialColor: Color = Color(0xFFE91E63),
+    isEditing: Boolean = false,
     onDismiss: () -> Unit,
-    onConfirm: (String, String, Int) -> Unit
+    onConfirm: (String, String, Int) -> Unit,
+    onDelete: (() -> Unit)? = null
 ) {
-    var name by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(initialName) }
+    var description by remember { mutableStateOf(initialDescription) }
     
     val colors = listOf(
         Color(0xFFE91E63), // Pink
@@ -231,11 +314,11 @@ fun NewFolderDialog(
         Color(0xFFFFC107), // Amber
         Color(0xFFFF5722)  // Deep Orange
     )
-    var selectedColor by remember { mutableStateOf(colors[0]) }
+    var selectedColor by remember { mutableStateOf(initialColor) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("New Folder") },
+        title = { Text(if (isEditing) "Edit Folder" else "New Folder") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedTextField(
@@ -277,6 +360,19 @@ fun NewFolderDialog(
                         }
                     }
                 }
+
+                if (isEditing && onDelete != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(
+                        onClick = onDelete,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Delete, null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Delete Folder")
+                    }
+                }
             }
         },
         confirmButton = {
@@ -284,7 +380,7 @@ fun NewFolderDialog(
                 onClick = { if (name.isNotBlank()) onConfirm(name, description, selectedColor.toArgb()) },
                 enabled = name.isNotBlank()
             ) {
-                Text("Create")
+                Text(if (isEditing) "Update" else "Create")
             }
         },
         dismissButton = {

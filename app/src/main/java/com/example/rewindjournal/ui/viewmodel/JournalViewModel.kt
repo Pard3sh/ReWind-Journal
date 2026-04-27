@@ -35,7 +35,8 @@ data class TimelineMoment(
     val title: String,
     val subtitle: String,
     val body: String = "",
-    val folderId: Long? = null
+    val folderId: Long? = null,
+    val folderColor: Int? = null
 )
 
 class JournalViewModel(private val repository: JournalRepository) : ViewModel() {
@@ -45,8 +46,9 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
 
     val folders: StateFlow<List<FolderSummary>> = combine(
         repository.allFolders,
-        repository.allEntries
-    ) { folders, entries ->
+        repository.allEntries,
+        _searchQuery
+    ) { folders, entries, query ->
         val folderSummaries = folders.map { folder ->
             FolderSummary(
                 id = folder.id,
@@ -67,7 +69,16 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
             color = 0xFF9E9E9E.toInt()
         )
         
-        listOf(generalFolder) + folderSummaries
+        val allFolders = listOf(generalFolder) + folderSummaries
+        
+        if (query.isBlank()) {
+            allFolders
+        } else {
+            allFolders.filter { 
+                it.name.contains(query, ignoreCase = true) || 
+                it.description.contains(query, ignoreCase = true) 
+            }
+        }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -78,20 +89,25 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         repository.allEntriesWithFolder,
         _searchQuery
     ) { entriesWithFolder, query ->
-        entriesWithFolder
-            .filter { 
-                it.entry.title.contains(query, ignoreCase = true) || 
-                it.entry.body.contains(query, ignoreCase = true) 
+        val mapped = entriesWithFolder.map { item ->
+            TimelineMoment(
+                id = item.entry.id,
+                title = item.entry.title,
+                subtitle = formatSubtitle(item.entry.timestamp, item.folder?.name),
+                body = item.entry.body,
+                folderId = item.entry.folderId,
+                folderColor = item.folder?.color ?: 0xFF9E9E9E.toInt()
+            )
+        }
+        
+        if (query.isBlank()) {
+            mapped
+        } else {
+            mapped.filter { 
+                it.title.contains(query, ignoreCase = true) || 
+                it.body.contains(query, ignoreCase = true)
             }
-            .map { item ->
-                TimelineMoment(
-                    id = item.entry.id,
-                    title = item.entry.title,
-                    subtitle = formatSubtitle(item.entry.timestamp, item.folder?.name),
-                    body = item.entry.body,
-                    folderId = item.entry.folderId
-                )
-            }
+        }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -130,6 +146,14 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         }
     }
 
+    fun deleteEntry(id: Long) {
+        viewModelScope.launch {
+            repository.getEntryById(id)?.let { entry ->
+                repository.deleteEntry(entry)
+            }
+        }
+    }
+
     fun addFolder(name: String, description: String, color: Int) {
         viewModelScope.launch {
             repository.insertFolder(
@@ -142,6 +166,28 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         }
     }
 
+    fun updateFolder(id: Long, name: String, description: String, color: Int) {
+        viewModelScope.launch {
+            repository.getFolderById(id)?.let { existingFolder ->
+                repository.updateFolder(
+                    existingFolder.copy(
+                        name = name,
+                        description = description,
+                        color = color
+                    )
+                )
+            }
+        }
+    }
+
+    fun deleteFolder(id: Long) {
+        viewModelScope.launch {
+            repository.getFolderById(id)?.let { folder ->
+                repository.deleteFolder(folder)
+            }
+        }
+    }
+
     fun getEntriesByFolder(folderId: Long): Flow<List<TimelineMoment>> {
         val targetEntries = if (folderId == -1L) {
             repository.allEntries.map { it.filter { entry -> entry.folderId == null } }
@@ -149,21 +195,16 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
             repository.getEntriesByFolder(folderId)
         }
 
-        return combine(targetEntries, _searchQuery) { entries, query ->
-            entries
-                .filter { 
-                    it.title.contains(query, ignoreCase = true) || 
-                    it.body.contains(query, ignoreCase = true) 
-                }
-                .map { entry ->
-                    TimelineMoment(
-                        id = entry.id,
-                        title = entry.title,
-                        subtitle = formatSubtitle(entry.timestamp, null),
-                        body = entry.body,
-                        folderId = entry.folderId
-                    )
-                }
+        return targetEntries.map { entries ->
+            entries.map { entry ->
+                TimelineMoment(
+                    id = entry.id,
+                    title = entry.title,
+                    subtitle = formatSubtitle(entry.timestamp, null),
+                    body = entry.body,
+                    folderId = entry.folderId
+                )
+            }
         }
     }
 
@@ -175,7 +216,8 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
                 title = entry.title,
                 subtitle = formatSubtitle(entry.timestamp, folder?.name),
                 body = entry.body,
-                folderId = entry.folderId
+                folderId = entry.folderId,
+                folderColor = folder?.color ?: 0xFF9E9E9E.toInt()
             )
         }
     }

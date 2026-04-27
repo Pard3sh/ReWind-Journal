@@ -23,6 +23,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Search
@@ -122,7 +124,7 @@ fun AffirmationScreen(viewModel: AffirmationViewModel = viewModel()) {
     }
 }
 
-// Search bar component for the folder screen only
+// Search bar component
 @Composable
 fun SearchBar(
     query: String,
@@ -135,7 +137,7 @@ fun SearchBar(
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp),
-        placeholder = { Text("Search entries...") },
+        placeholder = { Text("Search...") },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
         trailingIcon = {
             if (query.isNotEmpty()) {
@@ -168,7 +170,8 @@ fun EntryComposerCard(
     selectedFolderId: Long? = null,
     onFolderSelected: (Long?) -> Unit = {},
     isEditing: Boolean = false,
-    onCancelEdit: () -> Unit = {}
+    onCancelEdit: () -> Unit = {},
+    onDeleteClick: (() -> Unit)? = null
 ) {
     var showFolderPicker by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
@@ -243,17 +246,35 @@ fun EntryComposerCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                text = if (isEditing) "Edit Entry" else "Journal Entry",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = if (isEditing) "Update your reflection" else "Write a reflection",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = if (isEditing) "Edit Entry" else "Journal Entry",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = if (isEditing) "Update your reflection" else "Write a reflection",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                
+                if (isEditing && onDeleteClick != null) {
+                    IconButton(onClick = onDeleteClick) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Entry",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
 
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -374,7 +395,11 @@ fun SectionHeader(
 }
 
 @Composable
-fun FolderCard(folder: FolderSummary, onClick: () -> Unit = {}) {
+fun FolderCard(
+    folder: FolderSummary, 
+    onClick: () -> Unit = {},
+    onEditClick: (() -> Unit)? = null
+) {
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
@@ -386,7 +411,10 @@ fun FolderCard(folder: FolderSummary, onClick: () -> Unit = {}) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box(
                         modifier = Modifier
                             .size(12.dp)
@@ -399,11 +427,25 @@ fun FolderCard(folder: FolderSummary, onClick: () -> Unit = {}) {
                         fontWeight = FontWeight.Bold
                     )
                 }
-                Text(
-                    text = "${folder.entryCount} entries",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "${folder.entryCount} entries",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    
+                    if (onEditClick != null && folder.id != -1L) {
+                        IconButton(onClick = onEditClick) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit Folder",
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -416,7 +458,11 @@ fun FolderCard(folder: FolderSummary, onClick: () -> Unit = {}) {
 }
 
 @Composable
-fun TimelineCard(moment: TimelineMoment, onClick: () -> Unit = {}) {
+fun TimelineCard(
+    moment: TimelineMoment, 
+    onClick: () -> Unit = {},
+    overrideColor: Int? = null
+) {
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
@@ -432,7 +478,7 @@ fun TimelineCard(moment: TimelineMoment, onClick: () -> Unit = {}) {
                 modifier = Modifier
                     .size(12.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.primary,
+                        color = if (overrideColor != null) Color(overrideColor) else MaterialTheme.colorScheme.primary,
                         shape = CircleShape
                     )
             )

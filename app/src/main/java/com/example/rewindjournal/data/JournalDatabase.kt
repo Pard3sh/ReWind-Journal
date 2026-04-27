@@ -26,3 +26,8 @@ abstract class JournalDatabase : RoomDatabase() {
         }
     }
 }
+
+// For our final version, we should be saving information using EncryptedRoom or using SQLCipher
+// Need to get on Cloud Sync asap
+// Ideally, I think we should have the insights being generated not locally but using the cloud data
+// so the user does not have to wait locally for the computations!
