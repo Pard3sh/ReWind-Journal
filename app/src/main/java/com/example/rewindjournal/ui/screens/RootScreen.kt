@@ -18,8 +18,9 @@ import com.example.rewindjournal.ui.viewmodel.JournalViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.launch
-
-
+import kotlinx.coroutines.delay
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 // google sign in helper
 suspend fun signInWithGoogle(context: Context): String? {
 
@@ -60,6 +61,8 @@ suspend fun signInWithGoogle(context: Context): String? {
 }
 
 // root screen
+
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun RootScreen(
     authViewModel: AuthViewModel,
@@ -71,17 +74,28 @@ fun RootScreen(
     val isLoggedIn by authViewModel.isLoggedIn
     val isLoading by authViewModel.isLoading
 
-    when {
-        isLoading -> {
-            LoadingScreen()
-        }
+    // decide which screen to show
+    val screenState = when {
+        isLoading -> "loading"
+        isLoggedIn -> "home"
+        else -> "login"
+    }
 
-        isLoggedIn -> {
-            RewindJournalApp(journalViewModel)
-        }
+    AnimatedContent(
+        targetState = screenState,
+        transitionSpec = {
+            fadeIn(animationSpec = tween(500)) togetherWith
+                    fadeOut(animationSpec = tween(500))
+        },
+        label = "screen_transition"
+    ) { state ->
 
-        else -> {
-            SplashLoginScreen(
+        when (state) {
+            "loading" -> LoadingScreen()
+
+            "home" -> RewindJournalApp(journalViewModel)
+
+            "login" -> SplashLoginScreen(
                 onSignInClick = {
                     scope.launch {
                         val idToken = signInWithGoogle(context)
@@ -97,24 +111,42 @@ fun RootScreen(
 
 @Composable
 fun LoadingScreen() {
+
+    var progress by remember { mutableFloatStateOf(0f) }
+
+    // loading bar
+    // speed (lower delay = faster progress)
+    LaunchedEffect(Unit) {
+        while (progress < 1f) {
+            delay(15)
+            progress += 0.01f
+        }
+    }
+
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
             Text(
-                text = "Loading...",
-                style = MaterialTheme.typography.headlineSmall
+                text = "Rewind Journal",
+                style = MaterialTheme.typography.headlineMedium
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            CircularProgressIndicator()
+            LinearProgressIndicator(
+                progress = progress,
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .height(6.dp)
+            )
         }
     }
 }
-
 // splash login screen
 
 @Composable
