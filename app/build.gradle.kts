@@ -11,6 +11,14 @@ android {
     namespace = "com.example.rewindjournal"
     compileSdk = 36
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("my-release-key.keystore")
+            storePassword = "cat123"
+            keyAlias = "my-key-alias"
+            keyPassword = "cat123"
+        }
+    }
     defaultConfig {
         applicationId = "com.example.rewindjournal"
         minSdk = 24
@@ -28,6 +36,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {

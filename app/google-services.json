@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "478996599952-iedt8fdr6nh1joemjhfm3qspa8q1gtau.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.rewindjournal",
+            "certificate_hash": "fb44fd7b1ba82532559f2ad72d185c7449b6f3e6"
+          }
+        },
+        {
           "client_id": "478996599952-6ovojhtva0bdjjipi7d50q455j8o061p.apps.googleusercontent.com",
           "client_type": 3
         }
