@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BookmarkBorder
@@ -39,6 +40,18 @@ import com.example.rewindjournal.ui.screens.NewEntryScreen
 import com.example.rewindjournal.ui.screens.TimelineScreen
 import com.example.rewindjournal.ui.theme.RewindJournalTheme
 import com.example.rewindjournal.ui.viewmodel.JournalViewModel
+import coil.compose.AsyncImage
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import com.example.rewindjournal.data.JournalDatabase
+import com.example.rewindjournal.data.JournalRepository
+import com.example.rewindjournal.ui.screens.RootScreen
+import com.example.rewindjournal.ui.viewmodel.AuthViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,11 +59,26 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             RewindJournalTheme {
-                RewindJournalApp()
+                //RewindJournalApp()
+                val context = LocalContext.current
+
+                val authViewModel: AuthViewModel = viewModel()
+
+                val journalViewModel = remember {
+                    val db = JournalDatabase.getDatabase(context)
+                    val repository = JournalRepository(db.journalDao())
+                    JournalViewModel(repository)
+                }
+
+                RootScreen(
+                    authViewModel = authViewModel,
+                    journalViewModel = journalViewModel
+                )
+            }
             }
         }
     }
-}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,12 +104,36 @@ fun RewindJournalApp(viewModel: JournalViewModel = viewModel(factory = JournalVi
                     }
                 },
                 actions = {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Profile",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 16.dp)
-                    )
+//                    Icon(
+//                        imageVector = Icons.Default.Person,
+//                        contentDescription = "Profile",
+//                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+//                        modifier = Modifier.padding(end = 16.dp)
+//                    )
+                    val user = FirebaseAuth.getInstance().currentUser
+                    val photoUrl = user?.photoUrl?.toString()
+
+                    if (photoUrl != null) {
+
+                        AsyncImage(
+                            model = photoUrl,
+                            contentDescription = "Profile",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .padding(end = 16.dp)
+                                .size(36.dp)
+                                .clip(CircleShape)
+                        )
+
+                    } else {
+
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profile",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(end = 16.dp)
+                        )
+                    }
                 }
             )
         },

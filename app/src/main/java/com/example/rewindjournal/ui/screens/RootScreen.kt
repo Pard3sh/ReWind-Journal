@@ -1,25 +1,23 @@
 package com.example.rewindjournal.ui.screens
 
 
-import androidx.compose.runtime.*
-import androidx.compose.ui.platform.LocalContext
+import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 import androidx.credentials.CredentialManager
-import androidx.credentials.GetCredentialRequest
 import androidx.credentials.CustomCredential
-
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-
-import android.content.Context
-
+import androidx.credentials.GetCredentialRequest
+import com.example.rewindjournal.RewindJournalApp
 import com.example.rewindjournal.ui.viewmodel.AuthViewModel
 import com.example.rewindjournal.ui.viewmodel.JournalViewModel
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import kotlinx.coroutines.launch
 
 
 // google sign in helper
@@ -73,45 +71,27 @@ fun RootScreen(
     val isLoggedIn by authViewModel.isLoggedIn
     val isLoading by authViewModel.isLoading
 
-    // testing
-    val forceLoading = false
-    val forceLogin = true
-
     when {
-        forceLoading -> LoadingScreen()
+        isLoading -> {
+            LoadingScreen()
+        }
 
-        forceLogin -> SplashLoginScreen(
-            onSignInClick = {
-                scope.launch {
-                    val idToken = signInWithGoogle(context)
-                    if (idToken != null) {
-                        authViewModel.firebaseAuthWithGoogle(idToken) {}
+        isLoggedIn -> {
+            RewindJournalApp(journalViewModel)
+        }
+
+        else -> {
+            SplashLoginScreen(
+                onSignInClick = {
+                    scope.launch {
+                        val idToken = signInWithGoogle(context)
+                        if (idToken != null) {
+                            authViewModel.firebaseAuthWithGoogle(idToken) {}
+                        }
                     }
                 }
-            }
-        )
-
-        isLoading -> LoadingScreen()
-
-        isLoggedIn -> HomeScreen(journalViewModel)
-
-        else -> SplashLoginScreen(
-            onSignInClick = {
-                scope.launch {
-                    println("START SIGN IN")
-
-                    val idToken = signInWithGoogle(context)
-
-                    println("TOKEN: $idToken")
-
-                    if (idToken != null) {
-                        authViewModel.firebaseAuthWithGoogle(idToken) {}
-                    } else {
-                        println("TOKEN IS NULL ")
-                    }
-                }
-            }
-        )
+            )
+        }
     }
 }
 
