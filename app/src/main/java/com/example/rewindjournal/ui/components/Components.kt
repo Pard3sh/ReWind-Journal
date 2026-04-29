@@ -63,8 +63,9 @@ import com.example.rewindjournal.ui.viewmodel.AffirmationViewModel
 import androidx.compose.runtime.getValue
 
 @Composable
-fun AffirmationCard() {
+fun AffirmationCard(affirmation: String) {
     Card(
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -78,7 +79,7 @@ fun AffirmationCard() {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "You are allowed to notice how far you have already come.",
+                text = affirmation,
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
@@ -91,35 +92,24 @@ fun AffirmationCard() {
 @Composable
 fun AffirmationScreen(viewModel: AffirmationViewModel = viewModel()) {
 
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState = viewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.fetchAffirmation()
     }
 
-    Column {
+    when (val state = uiState.value) {
 
-        when (uiState) {
-
-            is AffirmationUiState.Loading -> {
-                Text("Loading...")
-            }
-
-            is AffirmationUiState.Success -> {
-                val text = (uiState as AffirmationUiState.Success).text
-                Text(text)
-            }
-
-            is AffirmationUiState.Error -> {
-                val message = (uiState as AffirmationUiState.Error).message
-                Text("Error: $message")
-            }
+        is AffirmationUiState.Loading -> {
+            Text("Loading...")
         }
 
-        Button(onClick = {
-            viewModel.fetchAffirmation()
-        }) {
-            Text("New Affirmation")
+        is AffirmationUiState.Success -> {
+            AffirmationCard(affirmation = state.text)
+        }
+
+        is AffirmationUiState.Error -> {
+            Text(state.message)
         }
     }
 }
@@ -175,9 +165,9 @@ fun EntryComposerCard(
 ) {
     var showFolderPicker by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-    
-    val currentFolderName = folders.find { 
-        it.id == (selectedFolderId ?: -1L) 
+
+    val currentFolderName = folders.find {
+        it.id == (selectedFolderId ?: -1L)
     }?.name ?: "General"
 
     if (showFolderPicker) {
@@ -196,14 +186,14 @@ fun EntryComposerCard(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
-                
+
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(folders) { folder ->
                         val isSelected = (selectedFolderId == folder.id) || (selectedFolderId == null && folder.id == -1L)
-                        
+
                         Surface(
                             onClick = {
                                 onFolderSelected(if (folder.id == -1L) null else folder.id)
@@ -264,7 +254,7 @@ fun EntryComposerCard(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
-                
+
                 if (isEditing && onDeleteClick != null) {
                     IconButton(onClick = onDeleteClick) {
                         Icon(
@@ -305,7 +295,7 @@ fun EntryComposerCard(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             OutlinedButton(
                 onClick = { showFolderPicker = true },
                 modifier = Modifier.fillMaxWidth(),
@@ -396,7 +386,7 @@ fun SectionHeader(
 
 @Composable
 fun FolderCard(
-    folder: FolderSummary, 
+    folder: FolderSummary,
     onClick: () -> Unit = {},
     onEditClick: (() -> Unit)? = null
 ) {
@@ -427,14 +417,14 @@ fun FolderCard(
                         fontWeight = FontWeight.Bold
                     )
                 }
-                
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "${folder.entryCount} entries",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    
+
                     if (onEditClick != null && folder.id != -1L) {
                         IconButton(onClick = onEditClick) {
                             Icon(
@@ -459,7 +449,7 @@ fun FolderCard(
 
 @Composable
 fun TimelineCard(
-    moment: TimelineMoment, 
+    moment: TimelineMoment,
     onClick: () -> Unit = {},
     overrideColor: Int? = null
 ) {

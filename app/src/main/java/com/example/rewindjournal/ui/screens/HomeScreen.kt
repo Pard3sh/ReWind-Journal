@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.rewindjournal.ui.components.AffirmationCard
+import com.example.rewindjournal.ui.components.AffirmationScreen
 import com.example.rewindjournal.ui.components.StatPill
 import com.example.rewindjournal.ui.viewmodel.JournalViewModel
 import com.example.rewindjournal.ui.components.TimelineCard
@@ -41,7 +42,7 @@ fun HomeScreen(viewModel: JournalViewModel, onEntryClick: (TimelineMoment) -> Un
     ) {
         item { Spacer(modifier = Modifier.height(8.dp)) }
 
-        item { AffirmationCard() }
+        item { AffirmationScreen() }
 
 
         item {
