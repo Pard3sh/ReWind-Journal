@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BookmarkBorder
@@ -25,11 +26,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -40,6 +45,9 @@ import com.example.rewindjournal.ui.screens.NewEntryScreen
 import com.example.rewindjournal.ui.screens.TimelineScreen
 import com.example.rewindjournal.ui.theme.RewindJournalTheme
 import com.example.rewindjournal.ui.viewmodel.JournalViewModel
+import com.example.rewindjournal.ui.screens.RootScreen
+import androidx.compose.ui.platform.LocalContext
+
 import coil.compose.AsyncImage
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.remember
@@ -75,15 +83,17 @@ class MainActivity : ComponentActivity() {
                     journalViewModel = journalViewModel
                 )
             }
-            }
         }
     }
-
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RewindJournalApp(viewModel: JournalViewModel = viewModel(factory = JournalViewModel.Factory)) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var editingEntryId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val entries by viewModel.entries.collectAsState()
+    val editingEntry = entries.find { it.id == editingEntryId }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -137,16 +147,16 @@ fun RewindJournalApp(viewModel: JournalViewModel = viewModel(factory = JournalVi
                 }
             )
         },
-        floatingActionButton = {
-            if (selectedTab != 2) {
-                FloatingActionButton(onClick = { selectedTab = 2 }) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "New journal entry"
-                    )
-                }
-            }
-        },
+//        floatingActionButton = {
+//            if (selectedTab != 2) {
+//                FloatingActionButton(onClick = { selectedTab = 2 }) {
+//                    Icon(
+//                        imageVector = Icons.Default.Add,
+//                        contentDescription = "New journal entry"
+//                    )
+//                }
+//            }
+//        },
         bottomBar = {
             NavigationBar {
                 val items = listOf("Home", "Folders", "New", "Timeline")
@@ -159,8 +169,11 @@ fun RewindJournalApp(viewModel: JournalViewModel = viewModel(factory = JournalVi
 
                 items.forEachIndexed { index, label ->
                     NavigationBarItem(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
+                        selected = selectedTab == index && editingEntryId == null,
+                        onClick = { 
+                            selectedTab = index
+                            editingEntryId = null 
+                        },
                         icon = {
                             Icon(
                                 imageVector = icons[index],
@@ -178,11 +191,23 @@ fun RewindJournalApp(viewModel: JournalViewModel = viewModel(factory = JournalVi
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            when (selectedTab) {
-                0 -> HomeScreen(viewModel)
-                1 -> FoldersScreen(viewModel)
-                2 -> NewEntryScreen(viewModel, onSaveComplete = { selectedTab = 0 })
-                3 -> TimelineScreen(viewModel)
+            if (editingEntryId != null && editingEntry != null) {
+                NewEntryScreen(
+                    viewModel = viewModel,
+                    editingEntry = editingEntry,
+                    onSaveComplete = { 
+                        editingEntryId = null
+                        selectedTab = 0 
+                    },
+                    onCancel = { editingEntryId = null }
+                )
+            } else {
+                when (selectedTab) {
+                    0 -> HomeScreen(viewModel, onEntryClick = { editingEntryId = it.id })
+                    1 -> FoldersScreen(viewModel, onEntryClick = { editingEntryId = it.id })
+                    2 -> NewEntryScreen(viewModel, onSaveComplete = { selectedTab = 0 })
+                    3 -> TimelineScreen(viewModel, onEntryClick = { editingEntryId = it.id })
+                }
             }
         }
     }

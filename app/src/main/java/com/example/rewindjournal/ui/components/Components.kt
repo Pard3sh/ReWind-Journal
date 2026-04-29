@@ -165,9 +165,9 @@ fun EntryComposerCard(
 ) {
     var showFolderPicker by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-    
-    val currentFolderName = folders.find { 
-        it.id == (selectedFolderId ?: -1L) 
+
+    val currentFolderName = folders.find {
+        it.id == (selectedFolderId ?: -1L)
     }?.name ?: "General"
 
     if (showFolderPicker) {
@@ -186,14 +186,14 @@ fun EntryComposerCard(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
-                
+
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(folders) { folder ->
                         val isSelected = (selectedFolderId == folder.id) || (selectedFolderId == null && folder.id == -1L)
-                        
+
                         Surface(
                             onClick = {
                                 onFolderSelected(if (folder.id == -1L) null else folder.id)
@@ -254,7 +254,7 @@ fun EntryComposerCard(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
-                
+
                 if (isEditing && onDeleteClick != null) {
                     IconButton(onClick = onDeleteClick) {
                         Icon(
@@ -295,7 +295,7 @@ fun EntryComposerCard(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             OutlinedButton(
                 onClick = { showFolderPicker = true },
                 modifier = Modifier.fillMaxWidth(),
@@ -386,7 +386,7 @@ fun SectionHeader(
 
 @Composable
 fun FolderCard(
-    folder: FolderSummary, 
+    folder: FolderSummary,
     onClick: () -> Unit = {},
     onEditClick: (() -> Unit)? = null
 ) {
@@ -417,14 +417,14 @@ fun FolderCard(
                         fontWeight = FontWeight.Bold
                     )
                 }
-                
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "${folder.entryCount} entries",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    
+
                     if (onEditClick != null && folder.id != -1L) {
                         IconButton(onClick = onEditClick) {
                             Icon(
@@ -449,7 +449,7 @@ fun FolderCard(
 
 @Composable
 fun TimelineCard(
-    moment: TimelineMoment, 
+    moment: TimelineMoment,
     onClick: () -> Unit = {},
     overrideColor: Int? = null
 ) {
