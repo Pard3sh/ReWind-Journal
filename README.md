@@ -11,32 +11,40 @@ ReWind Journal is a mobile journaling app built with Jetpack Compose (Material 3
 - Bottom navigation
 - Folder system with the ability to create, update, and delete folders
 - Journal entries with options to update and delete entries
+- Loading screen when app is first opened
+- Authetication through google (User is now able to connect their journal to their account)
 
 
 ## How to Run
 
 1. Open the project in Android Studio
 2. Sync Gradle and build the project.
-3. Run the app on an Android emulator or physical device (API 24+).
+3. Run the app on an Android emulator or physical device (API 24+). Ensure emulator has google playstore. 
 
 ## Screenshots
 
-1. Home Screen
+1. Loading Screen
+   <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/7dba3f4f-8031-4675-96a3-89afed6c7f87" />
+
+2. Login Screen
+   <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/a560396d-553f-4edc-8892-101e435d8553" />
+
+3. Home Screen
 <!-- <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/b31ccef4-1615-4701-9821-81dba63ce5e4" /> -->
 <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/81789cf6-5d76-423a-a896-fe1bc100f271" />
 
-2. Folders Screen
+4. Folders Screen
 <!-- <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/4843ed48-3807-4fdf-adca-1524b1179092" /> -->
 <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/7989ae5e-24f4-4725-9ff3-56ee5aacbfe6" />
 
-3. New Folder Screen
+5. New Folder Screen
 <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/cb0f2a45-29ed-47fd-a306-f3971ed8f8c6" />
 
-4. New Entry Screen
+6. New Entry Screen
 <!-- <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/3b23a48f-7b8f-4c82-ab3a-e1fff064d36f" /> -->
 <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/93e69b5c-21c7-41ea-a118-95ce4894aa24" />
 
-5. Timeline Screen
+7. Timeline Screen
 <!-- <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/84496b26-43e1-4db7-84c7-f926dbcf9ef1" /> -->
 <img width="497" height="905" alt="image" src="https://github.com/user-attachments/assets/2d51b7cd-8033-4090-9cb6-c728f2c24118" />
 
@@ -181,4 +189,4 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
 
 ## AI Reflection
 
-We used AI to aid in development, providing template starter code, assistance with working with Room, organizing and modularizing the code, and coming up with theme advice. The AI generated code came with fluff and features that fell outside of our scope, so we rejected those suggestions. For example, it tried to suggest a journaling streak which we were not planning to implement. Otherwise, it was a valuable tool to suggest other tools and create boilerplate.
+We used AI to aid in development, providing template starter code, assistance with working with Room, organizing and modularizing the code, and coming up with theme advice. The AI generated code came with fluff and features that fell outside of our scope, so we rejected those suggestions. For example, it tried to suggest a journaling streak which we were not planning to implement. Otherwise, it was a valuable tool to suggest other tools and create boilerplate. We also utilize AI throughout our debugging process, especially when we were working on authentication due to the unfamilairitt of the whole process. We had issues with SHA-1 keys which we had to ask ChatGpt for clarification and ideas on how to fix our error. 
