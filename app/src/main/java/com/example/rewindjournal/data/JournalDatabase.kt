@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 //@Database(entities = [Folder::class, JournalEntry::class], version = 1, exportSchema = false)
-@Database(entities = [Folder::class, JournalEntry::class], version = 1)
+@Database(entities = [Folder::class, JournalEntry::class], version = 2)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
 

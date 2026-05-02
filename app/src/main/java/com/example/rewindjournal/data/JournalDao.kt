@@ -31,8 +31,8 @@ interface JournalDao {
     @Delete
     suspend fun deleteFolder(folder: Folder)
 
-    @Query("SELECT * FROM folders ORDER BY name ASC")
-    fun getAllFolders(): Flow<List<Folder>>
+    @Query("SELECT * FROM folders WHERE userId = :currentUserId ORDER BY name ASC")
+    fun getAllFolders(currentUserId: String): Flow<List<Folder>>
 
     @Query("SELECT * FROM folders WHERE id = :id")
     suspend fun getFolderById(id: Long): Folder?
@@ -46,15 +46,15 @@ interface JournalDao {
     @Delete
     suspend fun deleteEntry(entry: JournalEntry)
 
-    @Query("SELECT * FROM journal_entries ORDER BY timestamp DESC")
-    fun getAllEntries(): Flow<List<JournalEntry>>
+    @Query("SELECT * FROM journal_entries WHERE userId = :currentUserId ORDER BY timestamp DESC")
+    fun getAllEntries(currentUserId: String): Flow<List<JournalEntry>>
 
     @Transaction
-    @Query("SELECT * FROM journal_entries ORDER BY timestamp DESC")
-    fun getAllEntriesWithFolder(): Flow<List<EntryWithFolder>>
+    @Query("SELECT * FROM journal_entries WHERE userId = :currentUserId ORDER BY timestamp DESC")
+    fun getAllEntriesWithFolder(currentUserId: String): Flow<List<EntryWithFolder>>
 
-    @Query("SELECT * FROM journal_entries WHERE folderId = :folderId ORDER BY timestamp DESC")
-    fun getEntriesByFolder(folderId: Long): Flow<List<JournalEntry>>
+    @Query("SELECT * FROM journal_entries WHERE folderId = :folderId AND userId = :currentUserId ORDER BY timestamp DESC")
+    fun getEntriesByFolder(folderId: Long, currentUserId: String): Flow<List<JournalEntry>>
 
     @Query("SELECT * FROM journal_entries WHERE id = :id")
     suspend fun getEntryById(id: Long): JournalEntry?

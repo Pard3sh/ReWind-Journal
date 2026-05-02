@@ -3,12 +3,16 @@ package com.example.rewindjournal.data
 import kotlinx.coroutines.flow.Flow
 
 class JournalRepository(private val journalDao: JournalDao) {
-    val allFolders: Flow<List<Folder>> = journalDao.getAllFolders()
-    val allEntries: Flow<List<JournalEntry>> = journalDao.getAllEntries()
-    val allEntriesWithFolder: Flow<List<EntryWithFolder>> = journalDao.getAllEntriesWithFolder()
+    
+    fun getAllFolders(userId: String): Flow<List<Folder>> = journalDao.getAllFolders(userId)
+    
+    fun getAllEntries(userId: String): Flow<List<JournalEntry>> = journalDao.getAllEntries(userId)
+    
+    fun getAllEntriesWithFolder(userId: String): Flow<List<EntryWithFolder>> = 
+        journalDao.getAllEntriesWithFolder(userId)
 
-    fun getEntriesByFolder(folderId: Long): Flow<List<JournalEntry>> = 
-        journalDao.getEntriesByFolder(folderId)
+    fun getEntriesByFolder(folderId: Long, userId: String): Flow<List<JournalEntry>> = 
+        journalDao.getEntriesByFolder(folderId, userId)
 
     suspend fun insertFolder(folder: Folder) = journalDao.insertFolder(folder)
     

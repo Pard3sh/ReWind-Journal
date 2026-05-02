@@ -8,6 +8,7 @@ import androidx.room.Index
 @Entity(tableName = "folders")
 data class Folder(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val userId: String,
     val name: String,
     val description: String = "",
     val color: Int = 0xFF6200EE.toInt(), // Default color (Purple)
@@ -28,6 +29,7 @@ data class Folder(
 )
 data class JournalEntry(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val userId: String,
     val folderId: Long? = null,
     val title: String,
     val body: String,

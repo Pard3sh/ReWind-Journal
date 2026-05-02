@@ -9,6 +9,7 @@ import com.example.rewindjournal.JournalApplication
 import com.example.rewindjournal.data.Folder
 import com.example.rewindjournal.data.JournalEntry
 import com.example.rewindjournal.data.JournalRepository
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -44,9 +45,11 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
+    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: "anonymous"
+
     val folders: StateFlow<List<FolderSummary>> = combine(
-        repository.allFolders,
-        repository.allEntries,
+        repository.getAllFolders(userId),
+        repository.getAllEntries(userId),
         _searchQuery
     ) { folders, entries, query ->
         val folderSummaries = folders.map { folder ->
@@ -58,7 +61,7 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
                 color = folder.color
             )
         }
-        
+
         // Virtual General folder (id = -1)
         val generalCount = entries.count { it.folderId == null }
         val generalFolder = FolderSummary(
@@ -68,15 +71,15 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
             description = "Unorganized reflections and quick notes.",
             color = 0xFF9E9E9E.toInt()
         )
-        
+
         val allFolders = listOf(generalFolder) + folderSummaries
-        
+
         if (query.isBlank()) {
             allFolders
         } else {
-            allFolders.filter { 
-                it.name.contains(query, ignoreCase = true) || 
-                it.description.contains(query, ignoreCase = true) 
+            allFolders.filter {
+                it.name.contains(query, ignoreCase = true) ||
+                it.description.contains(query, ignoreCase = true)
             }
         }
     }.stateIn(
@@ -86,7 +89,7 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
     )
 
     val entries: StateFlow<List<TimelineMoment>> = combine(
-        repository.allEntriesWithFolder,
+        repository.getAllEntriesWithFolder(userId),
         _searchQuery
     ) { entriesWithFolder, query ->
         val mapped = entriesWithFolder.map { item ->
@@ -99,12 +102,12 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
                 folderColor = item.folder?.color ?: 0xFF9E9E9E.toInt()
             )
         }
-        
+
         if (query.isBlank()) {
             mapped
         } else {
-            mapped.filter { 
-                it.title.contains(query, ignoreCase = true) || 
+            mapped.filter {
+                it.title.contains(query, ignoreCase = true) ||
                 it.body.contains(query, ignoreCase = true)
             }
         }
@@ -122,6 +125,7 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         viewModelScope.launch {
             repository.insertEntry(
                 JournalEntry(
+                    userId = userId,
                     title = title.ifBlank { "Untitled entry" },
                     body = body,
                     folderId = if (folderId == -1L) null else folderId,
@@ -158,6 +162,7 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         viewModelScope.launch {
             repository.insertFolder(
                 Folder(
+                    userId = userId,
                     name = name,
                     description = description,
                     color = color
@@ -190,9 +195,9 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
 
     fun getEntriesByFolder(folderId: Long): Flow<List<TimelineMoment>> {
         val targetEntries = if (folderId == -1L) {
-            repository.allEntries.map { it.filter { entry -> entry.folderId == null } }
+            repository.getAllEntries(userId).map { it.filter { entry -> entry.folderId == null } }
         } else {
-            repository.getEntriesByFolder(folderId)
+            repository.getEntriesByFolder(folderId, userId)
         }
 
         return targetEntries.map { entries ->
