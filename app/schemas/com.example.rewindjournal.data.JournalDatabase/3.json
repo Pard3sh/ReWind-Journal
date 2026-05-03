@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 3,
-    "identityHash": "22f8a2767e7dc515ae31e6b7f5afc94b",
+    "identityHash": "baee9be1b9fb8c06abbb9e26c7d37d95",
     "entities": [
       {
         "tableName": "folders",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `userId` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `color` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `userId` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `color` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `entryCount` INTEGER NOT NULL, `averageSentiment` REAL NOT NULL, `sentimentTrend` TEXT NOT NULL, `topLocations` TEXT NOT NULL, `topEvents` TEXT NOT NULL, `summaryText` TEXT NOT NULL, `startTimestamp` INTEGER, `endTimestamp` INTEGER, `veryPositiveCount` INTEGER NOT NULL, `positiveCount` INTEGER NOT NULL, `neutralCount` INTEGER NOT NULL, `negativeCount` INTEGER NOT NULL, `veryNegativeCount` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -41,6 +41,82 @@
           {
             "fieldPath": "timestamp",
             "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entryCount",
+            "columnName": "entryCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "averageSentiment",
+            "columnName": "averageSentiment",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sentimentTrend",
+            "columnName": "sentimentTrend",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "topLocations",
+            "columnName": "topLocations",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "topEvents",
+            "columnName": "topEvents",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "summaryText",
+            "columnName": "summaryText",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startTimestamp",
+            "columnName": "startTimestamp",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "endTimestamp",
+            "columnName": "endTimestamp",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "veryPositiveCount",
+            "columnName": "veryPositiveCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "positiveCount",
+            "columnName": "positiveCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "neutralCount",
+            "columnName": "neutralCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "negativeCount",
+            "columnName": "negativeCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "veryNegativeCount",
+            "columnName": "veryNegativeCount",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -240,6 +316,26 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_sentiment_nodes_entryId` ON `${TABLE_NAME}` (`entryId`)"
+          },
+          {
+            "name": "index_sentiment_nodes_folderId_orderIndex",
+            "unique": false,
+            "columnNames": [
+              "folderId",
+              "orderIndex"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sentiment_nodes_folderId_orderIndex` ON `${TABLE_NAME}` (`folderId`, `orderIndex`)"
+          },
+          {
+            "name": "index_sentiment_nodes_folderId_timestamp",
+            "unique": false,
+            "columnNames": [
+              "folderId",
+              "timestamp"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sentiment_nodes_folderId_timestamp` ON `${TABLE_NAME}` (`folderId`, `timestamp`)"
           }
         ],
         "foreignKeys": [
@@ -380,6 +476,16 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_detailed_nodes_entryId` ON `${TABLE_NAME}` (`entryId`)"
+          },
+          {
+            "name": "index_detailed_nodes_folderId_timestamp",
+            "unique": false,
+            "columnNames": [
+              "folderId",
+              "timestamp"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_detailed_nodes_folderId_timestamp` ON `${TABLE_NAME}` (`folderId`, `timestamp`)"
           }
         ],
         "foreignKeys": [
@@ -410,7 +516,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '22f8a2767e7dc515ae31e6b7f5afc94b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'baee9be1b9fb8c06abbb9e26c7d37d95')"
     ]
   }
 }
