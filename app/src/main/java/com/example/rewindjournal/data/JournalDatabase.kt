@@ -90,6 +90,12 @@ abstract class JournalDatabase : RoomDatabase() {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, JournalDatabase::class.java, "journal_database")
                     .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addCallback(object : RoomDatabase.Callback() {
+                        override fun onOpen(db: SupportSQLiteDatabase) {
+                            super.onOpen(db)
+                            db.execSQL("PRAGMA foreign_keys = OFF;")
+                        }
+                    })
                     .build()
                     .also { Instance = it }
             }

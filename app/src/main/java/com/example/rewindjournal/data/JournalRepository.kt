@@ -173,7 +173,11 @@ class JournalRepository(private val journalDao: JournalDao) {
                 } ?: emptyList()
                 
                 CoroutineScope(Dispatchers.IO).launch {
-                    journalDao.insertEntries(entries)
+                    try {
+                        journalDao.insertEntries(entries)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
             }
 
@@ -187,7 +191,11 @@ class JournalRepository(private val journalDao: JournalDao) {
                 } ?: emptyList()
 
                 CoroutineScope(Dispatchers.IO).launch {
-                    journalDao.insertFolders(folders)
+                    try {
+                        journalDao.insertFolders(folders)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
             }
     }
