@@ -21,13 +21,13 @@ import com.example.rewindjournal.ui.viewmodel.TimelineMoment
 fun NewEntryScreen(
     viewModel: JournalViewModel,
     editingEntry: TimelineMoment? = null,
-    initialFolderId: Long? = null,
+    initialFolderId: String? = null,
     onSaveComplete: () -> Unit,
     onCancel: () -> Unit = {}
 ) {
     var entryTitle by rememberSaveable { mutableStateOf(editingEntry?.title ?: "") }
     var entryBody by rememberSaveable { mutableStateOf(editingEntry?.body ?: "") }
-    var selectedFolderId by rememberSaveable { mutableStateOf<Long?>(editingEntry?.folderId ?: initialFolderId) }
+    var selectedFolderId by rememberSaveable { mutableStateOf<String?>(editingEntry?.folderId ?: initialFolderId) }
 
     val folders by viewModel.folders.collectAsState()
 

@@ -24,7 +24,7 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 data class FolderSummary(
-    val id: Long,
+    val id: String,
     val name: String,
     val entryCount: Int,
     val description: String,
@@ -32,20 +32,27 @@ data class FolderSummary(
 )
 
 data class TimelineMoment(
-    val id: Long,
+    val id: String,
     val title: String,
     val subtitle: String,
     val body: String = "",
-    val folderId: Long? = null,
+    val folderId: String? = null,
     val folderColor: Int? = null
 )
 
 class JournalViewModel(private val repository: JournalRepository) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
+    private val gENERALFOLDERID = "general"
     val searchQuery: StateFlow<String> = _searchQuery
 
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: "anonymous"
+
+    init {
+        if (FirebaseAuth.getInstance().currentUser != null) {
+            repository.startSync()
+        }
+    }
 
     val folders: StateFlow<List<FolderSummary>> = combine(
         repository.getAllFolders(userId),
@@ -62,10 +69,10 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
             )
         }
 
-        // Virtual General folder (id = -1)
+        // Virtual General folder (id = "general")
         val generalCount = entries.count { it.folderId == null }
         val generalFolder = FolderSummary(
-            id = -1,
+            id = gENERALFOLDERID,
             name = "General",
             entryCount = generalCount,
             description = "Unorganized reflections and quick notes.",
@@ -121,28 +128,28 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         _searchQuery.value = query
     }
 
-    fun addEntry(title: String, body: String = "", folderId: Long? = null) {
+    fun addEntry(title: String, body: String = "", folderId: String? = null) {
         viewModelScope.launch {
             repository.insertEntry(
                 JournalEntry(
                     userId = userId,
                     title = title.ifBlank { "Untitled entry" },
                     body = body,
-                    folderId = if (folderId == -1L) null else folderId,
+                    folderId = if (folderId == gENERALFOLDERID) null else folderId,
                     timestamp = System.currentTimeMillis()
                 )
             )
         }
     }
 
-    fun updateEntry(id: Long, title: String, body: String, folderId: Long?) {
+    fun updateEntry(id: String, title: String, body: String, folderId: String?) {
         viewModelScope.launch {
             repository.getEntryById(id)?.let { existingEntry ->
                 repository.updateEntry(
                     existingEntry.copy(
                         title = title,
                         body = body,
-                        folderId = if (folderId == -1L) null else folderId,
+                        folderId = if (folderId == gENERALFOLDERID) null else folderId,
                         timestamp = System.currentTimeMillis()
                     )
                 )
@@ -150,7 +157,7 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         }
     }
 
-    fun deleteEntry(id: Long) {
+    fun deleteEntry(id: String) {
         viewModelScope.launch {
             repository.getEntryById(id)?.let { entry ->
                 repository.deleteEntry(entry)
@@ -171,7 +178,7 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         }
     }
 
-    fun updateFolder(id: Long, name: String, description: String, color: Int) {
+    fun updateFolder(id: String, name: String, description: String, color: Int) {
         viewModelScope.launch {
             repository.getFolderById(id)?.let { existingFolder ->
                 repository.updateFolder(
@@ -185,7 +192,7 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         }
     }
 
-    fun deleteFolder(id: Long) {
+    fun deleteFolder(id: String) {
         viewModelScope.launch {
             repository.getFolderById(id)?.let { folder ->
                 repository.deleteFolder(folder)
@@ -193,8 +200,8 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         }
     }
 
-    fun getEntriesByFolder(folderId: Long): Flow<List<TimelineMoment>> {
-        val targetEntries = if (folderId == -1L) {
+    fun getEntriesByFolder(folderId: String): Flow<List<TimelineMoment>> {
+        val targetEntries = if (folderId == gENERALFOLDERID) {
             repository.getAllEntries(userId).map { it.filter { entry -> entry.folderId == null } }
         } else {
             repository.getEntriesByFolder(folderId, userId)
@@ -213,7 +220,7 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         }
     }
 
-    suspend fun getEntryById(entryId: Long): TimelineMoment? {
+    suspend fun getEntryById(entryId: String): TimelineMoment? {
         return repository.getEntryById(entryId)?.let { entry ->
             val folder = entry.folderId?.let { repository.getFolderById(it) }
             TimelineMoment(

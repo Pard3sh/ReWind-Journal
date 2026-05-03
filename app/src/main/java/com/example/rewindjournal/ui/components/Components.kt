@@ -157,17 +157,17 @@ fun EntryComposerCard(
     onBodyChange: (String) -> Unit,
     onSaveClick: () -> Unit,
     folders: List<FolderSummary> = emptyList(),
-    selectedFolderId: Long? = null,
-    onFolderSelected: (Long?) -> Unit = {},
+    selectedFolderId: String? = null,
+    onFolderSelected: (String?) -> Unit = {},
     isEditing: Boolean = false,
     onCancelEdit: () -> Unit = {},
     onDeleteClick: (() -> Unit)? = null
 ) {
     var showFolderPicker by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-
+    val generalFolderID = "general"
     val currentFolderName = folders.find {
-        it.id == (selectedFolderId ?: -1L)
+        it.id == (selectedFolderId ?: generalFolderID)
     }?.name ?: "General"
 
     if (showFolderPicker) {
@@ -192,12 +192,15 @@ fun EntryComposerCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(folders) { folder ->
-                        val isSelected = (selectedFolderId == folder.id) || (selectedFolderId == null && folder.id == -1L)
+                        val isSelected =
+                            (selectedFolderId == folder.id) ||
+                                    (selectedFolderId == null && folder.id == generalFolderID)
 
                         Surface(
                             onClick = {
-                                onFolderSelected(if (folder.id == -1L) null else folder.id)
+                                onFolderSelected(if (folder.id == generalFolderID) null else folder.id)
                                 showFolderPicker = false
+
                             },
                             shape = RoundedCornerShape(16.dp),
                             color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
@@ -390,6 +393,7 @@ fun FolderCard(
     onClick: () -> Unit = {},
     onEditClick: (() -> Unit)? = null
 ) {
+    val generalFolderID = "general"
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
@@ -425,7 +429,7 @@ fun FolderCard(
                         color = MaterialTheme.colorScheme.primary
                     )
 
-                    if (onEditClick != null && folder.id != -1L) {
+                    if (onEditClick != null && folder.id != generalFolderID) {
                         IconButton(onClick = onEditClick) {
                             Icon(
                                 imageVector = Icons.Default.Edit,

@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun RewindJournalApp(viewModel: JournalViewModel = viewModel(factory = JournalViewModel.Factory)) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    var editingEntryId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var editingEntryId by rememberSaveable { mutableStateOf<String?>(null) }
     val entries by viewModel.entries.collectAsState()
     val editingEntry = entries.find { it.id == editingEntryId }
 

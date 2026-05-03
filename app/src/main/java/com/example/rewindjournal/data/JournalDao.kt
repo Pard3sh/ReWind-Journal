@@ -23,7 +23,7 @@ data class EntryWithFolder(
 @Dao
 interface JournalDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertFolder(folder: Folder): Long
+    suspend fun insertFolder(folder: Folder)
 
     @Update
     suspend fun updateFolder(folder: Folder)
@@ -35,10 +35,10 @@ interface JournalDao {
     fun getAllFolders(currentUserId: String): Flow<List<Folder>>
 
     @Query("SELECT * FROM folders WHERE id = :id")
-    suspend fun getFolderById(id: Long): Folder?
+    suspend fun getFolderById(id: String): Folder?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertEntry(entry: JournalEntry): Long
+    suspend fun insertEntry(entry: JournalEntry)
 
     @Update
     suspend fun updateEntry(entry: JournalEntry)
@@ -54,8 +54,21 @@ interface JournalDao {
     fun getAllEntriesWithFolder(currentUserId: String): Flow<List<EntryWithFolder>>
 
     @Query("SELECT * FROM journal_entries WHERE folderId = :folderId AND userId = :currentUserId ORDER BY timestamp DESC")
-    fun getEntriesByFolder(folderId: Long, currentUserId: String): Flow<List<JournalEntry>>
+    fun getEntriesByFolder(folderId: String, currentUserId: String): Flow<List<JournalEntry>>
 
     @Query("SELECT * FROM journal_entries WHERE id = :id")
-    suspend fun getEntryById(id: Long): JournalEntry?
+    suspend fun getEntryById(id: String): JournalEntry?
+
+    // for cloud sync
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertEntries(entries: List<JournalEntry>)
+
+    @Query("DELETE FROM journal_entries")
+    suspend fun clearEntries()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertFolders(folders: List<Folder>)
+
+    @Query("DELETE FROM folders")
+    suspend fun clearFolders()
 }

@@ -7,7 +7,7 @@ import androidx.room.Index
 
 @Entity(tableName = "folders")
 data class Folder(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @PrimaryKey val id: String = "",
     val userId: String,
     val name: String,
     val description: String = "",
@@ -28,9 +28,9 @@ data class Folder(
     indices = [Index(value = ["folderId"])]
 )
 data class JournalEntry(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @PrimaryKey val id: String = "",
     val userId: String,
-    val folderId: Long? = null,
+    val folderId: String? = null,
     val title: String,
     val body: String,
     val timestamp: Long = System.currentTimeMillis(),

@@ -100,4 +100,7 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth.v130)
     implementation(libs.googleid.v110)
     implementation(libs.coil.compose)
+
+    // Cloud Firestore
+    implementation(libs.firebase.firestore)
 }
