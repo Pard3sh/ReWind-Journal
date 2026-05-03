@@ -12,6 +12,7 @@ class JournalRepository(private val journalDao: JournalDao) {
 
     private val db = FirebaseFirestore.getInstance()
     private val auth get() = FirebaseAuth.getInstance()
+    private var syncedUserId: String? = null
 
     // read data
 
@@ -36,37 +37,31 @@ class JournalRepository(private val journalDao: JournalDao) {
     // insert folder/entry
 
     suspend fun insertFolder(folder: Folder) {
-
         val uid = auth.currentUser?.uid ?: return
-
         val docRef = db.collection("users")
             .document(uid)
             .collection("folders")
             .document()
 
-        val folderWithId = folder.copy(id = docRef.id)
+        val folderWithId = folder.copy(id = docRef.id, userId = uid)
 
-        // save locally ONCE
+        // save locally
         journalDao.insertFolder(folderWithId)
 
         // save to firestore
         docRef.set(folderWithId)
-
     }
 
     suspend fun insertEntry(entry: JournalEntry) {
-
         val uid = auth.currentUser?.uid ?: return
-
         val docRef = db.collection("users")
             .document(uid)
             .collection("entries")
             .document()
 
-        val entryWithId = entry.copy(id = docRef.id)
+        val entryWithId = entry.copy(id = docRef.id, userId = uid)
 
-        println("Saving entry: $entryWithId")
-        //  save locally
+        // save locally
         journalDao.insertEntry(entryWithId)
 
         // then save to cloud
@@ -100,29 +95,29 @@ class JournalRepository(private val journalDao: JournalDao) {
     // update folder/entry
 
     suspend fun updateFolder(folder: Folder) {
-
-        journalDao.updateFolder(folder)
-
         val uid = auth.currentUser?.uid ?: return
+        val folderToUpdate = folder.copy(userId = uid)
+        
+        journalDao.updateFolder(folderToUpdate)
+
         db.collection("users")
             .document(uid)
             .collection("folders")
-            .document(folder.id)
-            .set(folder)
-
+            .document(folderToUpdate.id)
+            .set(folderToUpdate)
     }
 
     suspend fun updateEntry(entry: JournalEntry) {
-
-        journalDao.updateEntry(entry)
-
         val uid = auth.currentUser?.uid ?: return
+        val entryToUpdate = entry.copy(userId = uid)
+
+        journalDao.updateEntry(entryToUpdate)
 
         db.collection("users")
             .document(uid)
             .collection("entries")
-            .document(entry.id)
-            .set(entry)
+            .document(entryToUpdate.id)
+            .set(entryToUpdate)
     }
 
     // delete folder/entry
@@ -164,33 +159,34 @@ class JournalRepository(private val journalDao: JournalDao) {
     // sync
 
     fun startSync() {
-
         val uid = auth.currentUser?.uid ?: return
+        if (syncedUserId == uid) return
+        syncedUserId = uid
 
         // sync entries
         db.collection("users")
             .document(uid)
             .collection("entries")
             .addSnapshotListener { snapshot, _ ->
-
-            val entries = snapshot?.toObjects(JournalEntry::class.java) ?: emptyList()
-
-            CoroutineScope(Dispatchers.IO).launch {
-                //journalDao.clearEntries()
-                journalDao.insertEntries(entries)
+                val entries = snapshot?.documents?.mapNotNull { doc ->
+                    doc.toObject(JournalEntry::class.java)?.copy(id = doc.id, userId = uid)
+                } ?: emptyList()
+                
+                CoroutineScope(Dispatchers.IO).launch {
+                    journalDao.insertEntries(entries)
+                }
             }
-        }
 
         // sync folders
         db.collection("users")
             .document(uid)
             .collection("folders")
             .addSnapshotListener { snapshot, _ ->
-
-                val folders = snapshot?.toObjects(Folder::class.java) ?: emptyList()
+                val folders = snapshot?.documents?.mapNotNull { doc ->
+                    doc.toObject(Folder::class.java)?.copy(id = doc.id, userId = uid)
+                } ?: emptyList()
 
                 CoroutineScope(Dispatchers.IO).launch {
-                    //journalDao.clearFolders()
                     journalDao.insertFolders(folders)
                 }
             }

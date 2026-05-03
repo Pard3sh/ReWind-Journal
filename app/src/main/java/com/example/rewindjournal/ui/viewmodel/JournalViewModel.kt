@@ -10,11 +10,13 @@ import com.example.rewindjournal.data.Folder
 import com.example.rewindjournal.data.JournalEntry
 import com.example.rewindjournal.data.JournalRepository
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -40,53 +42,68 @@ data class TimelineMoment(
     val folderColor: Int? = null
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class JournalViewModel(private val repository: JournalRepository) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
     private val gENERALFOLDERID = "general"
     val searchQuery: StateFlow<String> = _searchQuery
 
-    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: "anonymous"
+    private val _userId = MutableStateFlow(FirebaseAuth.getInstance().currentUser?.uid ?: "anonymous")
+    val userId: String get() = _userId.value
 
-    init {
-        if (FirebaseAuth.getInstance().currentUser != null) {
+    private val authStateListener = FirebaseAuth.AuthStateListener { auth ->
+        val uid = auth.currentUser?.uid ?: "anonymous"
+        _userId.value = uid
+        if (uid != "anonymous") {
             repository.startSync()
         }
     }
 
-    val folders: StateFlow<List<FolderSummary>> = combine(
-        repository.getAllFolders(userId),
-        repository.getAllEntries(userId),
-        _searchQuery
-    ) { folders, entries, query ->
-        val folderSummaries = folders.map { folder ->
-            FolderSummary(
-                id = folder.id,
-                name = folder.name,
-                entryCount = entries.count { it.folderId == folder.id },
-                description = folder.description,
-                color = folder.color
+    init {
+        FirebaseAuth.getInstance().addAuthStateListener(authStateListener)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        FirebaseAuth.getInstance().removeAuthStateListener(authStateListener)
+    }
+
+    val folders: StateFlow<List<FolderSummary>> = _userId.flatMapLatest { currentUid ->
+        combine(
+            repository.getAllFolders(currentUid),
+            repository.getAllEntries(currentUid),
+            _searchQuery
+        ) { folders, entries, query ->
+            val folderSummaries = folders.map { folder ->
+                FolderSummary(
+                    id = folder.id,
+                    name = folder.name,
+                    entryCount = entries.count { it.folderId == folder.id },
+                    description = folder.description,
+                    color = folder.color
+                )
+            }
+
+            // Virtual General folder (id = "general")
+            val generalCount = entries.count { it.folderId == null }
+            val generalFolder = FolderSummary(
+                id = gENERALFOLDERID,
+                name = "General",
+                entryCount = generalCount,
+                description = "Unorganized reflections and quick notes.",
+                color = 0xFF9E9E9E.toInt()
             )
-        }
 
-        // Virtual General folder (id = "general")
-        val generalCount = entries.count { it.folderId == null }
-        val generalFolder = FolderSummary(
-            id = gENERALFOLDERID,
-            name = "General",
-            entryCount = generalCount,
-            description = "Unorganized reflections and quick notes.",
-            color = 0xFF9E9E9E.toInt()
-        )
+            val allFolders = listOf(generalFolder) + folderSummaries
 
-        val allFolders = listOf(generalFolder) + folderSummaries
-
-        if (query.isBlank()) {
-            allFolders
-        } else {
-            allFolders.filter {
-                it.name.contains(query, ignoreCase = true) ||
-                it.description.contains(query, ignoreCase = true)
+            if (query.isBlank()) {
+                allFolders
+            } else {
+                allFolders.filter {
+                    it.name.contains(query, ignoreCase = true) ||
+                    it.description.contains(query, ignoreCase = true)
+                }
             }
         }
     }.stateIn(
@@ -95,27 +112,29 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         initialValue = emptyList()
     )
 
-    val entries: StateFlow<List<TimelineMoment>> = combine(
-        repository.getAllEntriesWithFolder(userId),
-        _searchQuery
-    ) { entriesWithFolder, query ->
-        val mapped = entriesWithFolder.map { item ->
-            TimelineMoment(
-                id = item.entry.id,
-                title = item.entry.title,
-                subtitle = formatSubtitle(item.entry.timestamp, item.folder?.name),
-                body = item.entry.body,
-                folderId = item.entry.folderId,
-                folderColor = item.folder?.color ?: 0xFF9E9E9E.toInt()
-            )
-        }
+    val entries: StateFlow<List<TimelineMoment>> = _userId.flatMapLatest { currentUid ->
+        combine(
+            repository.getAllEntriesWithFolder(currentUid),
+            _searchQuery
+        ) { entriesWithFolder, query ->
+            val mapped = entriesWithFolder.map { item ->
+                TimelineMoment(
+                    id = item.entry.id,
+                    title = item.entry.title,
+                    subtitle = formatSubtitle(item.entry.timestamp, item.folder?.name),
+                    body = item.entry.body,
+                    folderId = item.entry.folderId,
+                    folderColor = item.folder?.color ?: 0xFF9E9E9E.toInt()
+                )
+            }
 
-        if (query.isBlank()) {
-            mapped
-        } else {
-            mapped.filter {
-                it.title.contains(query, ignoreCase = true) ||
-                it.body.contains(query, ignoreCase = true)
+            if (query.isBlank()) {
+                mapped
+            } else {
+                mapped.filter {
+                    it.title.contains(query, ignoreCase = true) ||
+                    it.body.contains(query, ignoreCase = true)
+                }
             }
         }
     }.stateIn(
@@ -211,25 +230,26 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         }
     }
 
-    fun getEntriesByFolder(folderId: String): Flow<List<TimelineMoment>> {
-        val targetEntries = if (folderId == gENERALFOLDERID) {
-            repository.getAllEntries(userId).map { it.filter { entry -> entry.folderId == null } }
-        } else {
-            repository.getEntriesByFolder(folderId, userId)
-        }
+    fun getEntriesByFolder(folderId: String): Flow<List<TimelineMoment>> =
+        _userId.flatMapLatest { currentUid ->
+            val targetEntries = if (folderId == gENERALFOLDERID) {
+                repository.getAllEntries(currentUid).map { it.filter { entry -> entry.folderId == null } }
+            } else {
+                repository.getEntriesByFolder(folderId, currentUid)
+            }
 
-        return targetEntries.map { entries ->
-            entries.map { entry ->
-                TimelineMoment(
-                    id = entry.id,
-                    title = entry.title,
-                    subtitle = formatSubtitle(entry.timestamp, null),
-                    body = entry.body,
-                    folderId = entry.folderId
-                )
+            targetEntries.map { entries ->
+                entries.map { entry ->
+                    TimelineMoment(
+                        id = entry.id,
+                        title = entry.title,
+                        subtitle = formatSubtitle(entry.timestamp, null),
+                        body = entry.body,
+                        folderId = entry.folderId
+                    )
+                }
             }
         }
-    }
 
     suspend fun getEntryById(entryId: String): TimelineMoment? {
         return repository.getEntryById(entryId)?.let { entry ->

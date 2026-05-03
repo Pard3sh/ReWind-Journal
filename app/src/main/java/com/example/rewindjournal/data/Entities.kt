@@ -9,8 +9,8 @@ import androidx.room.Index
 @Entity(tableName = "folders")
 data class Folder(
     @PrimaryKey val id: String = "",
-    val userId: String,
-    val name: String,
+    val userId: String = "",
+    val name: String = "",
     val description: String = "",
     val color: Int = 0xFF6200EE.toInt(), // Default color (Purple)
     val timestamp: Long = System.currentTimeMillis()
@@ -33,10 +33,10 @@ data class Folder(
 // what each journal entry will store
 data class JournalEntry(
     @PrimaryKey val id: String = "",
-    val userId: String,
+    val userId: String = "",
     val folderId: String? = null,
-    val title: String,
-    val body: String,
+    val title: String = "",
+    val body: String = "",
     val timestamp: Long = System.currentTimeMillis(),
     val latitude: Double? = null,
     val longitude: Double? = null
