@@ -27,6 +27,12 @@ class JournalRepository(private val journalDao: JournalDao) {
     fun getEntriesByFolder(folderId: String, userId: String): Flow<List<JournalEntry>> =
         journalDao.getEntriesByFolder(folderId, userId)
 
+    fun getSentimentNodesByFolder(folderId: String): Flow<List<SentimentNode>> =
+        journalDao.getSentimentNodesByFolder(folderId)
+
+    fun getDetailedNodesByFolder(folderId: String): Flow<List<DetailedNode>> =
+        journalDao.getDetailedNodesByFolder(folderId)
+
     // insert folder/entry
 
     suspend fun insertFolder(folder: Folder) {
@@ -65,6 +71,30 @@ class JournalRepository(private val journalDao: JournalDao) {
 
         // then save to cloud
         docRef.set(entryWithId)
+    }
+
+    suspend fun insertSentimentNode(node: SentimentNode) {
+        journalDao.insertSentimentNode(node)
+    }
+
+    suspend fun insertDetailedNode(node: DetailedNode) {
+        journalDao.insertDetailedNode(node)
+    }
+
+    suspend fun insertSentimentNodes(nodes: List<SentimentNode>) {
+        journalDao.insertSentimentNodes(nodes)
+    }
+
+    suspend fun insertDetailedNodes(nodes: List<DetailedNode>) {
+        journalDao.insertDetailedNodes(nodes)
+    }
+
+    suspend fun clearSentimentNodes() {
+        journalDao.clearSentimentNodes()
+    }
+
+    suspend fun clearDetailedNodes() {
+        journalDao.clearDetailedNodes()
     }
 
     // update folder/entry

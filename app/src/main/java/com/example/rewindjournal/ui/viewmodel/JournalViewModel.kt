@@ -128,7 +128,14 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         _searchQuery.value = query
     }
 
-    fun addEntry(title: String, body: String = "", folderId: String? = null) {
+    // add location
+    fun addEntry(
+        title: String,
+        body: String = "",
+        folderId: String? = null,
+        latitude: Double? = null,
+        longitude: Double? = null
+    ) {
         viewModelScope.launch {
             repository.insertEntry(
                 JournalEntry(
@@ -136,7 +143,9 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
                     title = title.ifBlank { "Untitled entry" },
                     body = body,
                     folderId = if (folderId == gENERALFOLDERID) null else folderId,
-                    timestamp = System.currentTimeMillis()
+                    timestamp = System.currentTimeMillis(),
+                    latitude = latitude,
+                    longitude = longitude
                 )
             )
         }
@@ -150,7 +159,9 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
                         title = title,
                         body = body,
                         folderId = if (folderId == gENERALFOLDERID) null else folderId,
-                        timestamp = System.currentTimeMillis()
+                        timestamp = System.currentTimeMillis(),
+                        latitude = existingEntry.latitude,
+                        longitude = existingEntry.longitude
                     )
                 )
             }

@@ -8,7 +8,11 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 //@Database(entities = [Folder::class, JournalEntry::class], version = 1, exportSchema = false)
-@Database(entities = [Folder::class, JournalEntry::class], version = 2, exportSchema = true)
+@Database(
+    entities = [Folder::class, JournalEntry::class, SentimentNode::class, DetailedNode::class],
+    version = 3,
+    exportSchema = true
+)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
 
@@ -35,10 +39,57 @@ abstract class JournalDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS sentiment_nodes (" +
+                            "id TEXT NOT NULL PRIMARY KEY, " +
+                            "folderId TEXT NOT NULL, " +
+                            "entryId TEXT NOT NULL, " +
+                            "entryTitle TEXT NOT NULL, " +
+                            "generatedTitle TEXT NOT NULL, " +
+                            "timestamp INTEGER NOT NULL, " +
+                            "savedLocation TEXT NOT NULL, " +
+                            "sentimentScore REAL NOT NULL, " +
+                            "sentimentMagnitude REAL NOT NULL, " +
+                            "emotionLabel TEXT NOT NULL, " +
+                            "extractedLocations TEXT NOT NULL, " +
+                            "extractedEvents TEXT NOT NULL, " +
+                            "orderIndex INTEGER NOT NULL, " +
+                            "FOREIGN KEY(folderId) REFERENCES folders(id) ON DELETE CASCADE, " +
+                            "FOREIGN KEY(entryId) REFERENCES journal_entries(id) ON DELETE CASCADE)"
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_sentiment_nodes_folderId ON sentiment_nodes(folderId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_sentiment_nodes_entryId ON sentiment_nodes(entryId)")
+
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS detailed_nodes (" +
+                            "id TEXT NOT NULL PRIMARY KEY, " +
+                            "folderId TEXT NOT NULL, " +
+                            "entryId TEXT NOT NULL, " +
+                            "entryTitle TEXT NOT NULL, " +
+                            "generatedTitle TEXT NOT NULL, " +
+                            "timestamp INTEGER NOT NULL, " +
+                            "savedLocation TEXT NOT NULL, " +
+                            "emotionLabel TEXT NOT NULL, " +
+                            "sentimentLabel TEXT NOT NULL, " +
+                            "sentimentScore REAL NOT NULL, " +
+                            "sentimentMagnitude REAL NOT NULL, " +
+                            "extractedLocations TEXT NOT NULL, " +
+                            "extractedEvents TEXT NOT NULL, " +
+                            "entityRecords TEXT NOT NULL, " +
+                            "FOREIGN KEY(folderId) REFERENCES folders(id) ON DELETE CASCADE, " +
+                            "FOREIGN KEY(entryId) REFERENCES journal_entries(id) ON DELETE CASCADE)"
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_detailed_nodes_folderId ON detailed_nodes(folderId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_detailed_nodes_entryId ON detailed_nodes(entryId)")
+            }
+        }
+
         fun getDatabase(context: Context): JournalDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, JournalDatabase::class.java, "journal_database")
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                     .also { Instance = it }
             }
