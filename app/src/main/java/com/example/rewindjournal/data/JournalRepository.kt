@@ -1,11 +1,11 @@
 package com.example.rewindjournal.data
-//for now if we need to use coroutines which we most likely will have to
 
-import kotlinx.coroutines.flow.Flow
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 class JournalRepository(private val journalDao: JournalDao) {
@@ -14,10 +14,16 @@ class JournalRepository(private val journalDao: JournalDao) {
     private val auth get() = FirebaseAuth.getInstance()
     private var syncedUserId: String? = null
 
-    // read data
+    private var entriesListener: ListenerRegistration? = null
+    private var foldersListener: ListenerRegistration? = null
+    private val sentimentNodeListeners = mutableMapOf<String, ListenerRegistration>()
+    private val detailedNodeListeners = mutableMapOf<String, ListenerRegistration>()
 
     fun getAllFolders(userId: String): Flow<List<Folder>> =
         journalDao.getAllFolders(userId)
+
+    fun getFolderFlow(folderId: String): Flow<Folder?> =
+        journalDao.getFolderFlow(folderId)
 
     fun getAllEntries(userId: String): Flow<List<JournalEntry>> =
         journalDao.getAllEntries(userId)
@@ -34,8 +40,6 @@ class JournalRepository(private val journalDao: JournalDao) {
     fun getDetailedNodesByFolder(folderId: String): Flow<List<DetailedNode>> =
         journalDao.getDetailedNodesByFolder(folderId)
 
-    // insert folder/entry
-
     suspend fun insertFolder(folder: Folder) {
         val uid = auth.currentUser?.uid ?: return
         val docRef = db.collection("users")
@@ -45,10 +49,7 @@ class JournalRepository(private val journalDao: JournalDao) {
 
         val folderWithId = folder.copy(id = docRef.id, userId = uid)
 
-        // save locally
         journalDao.insertFolder(folderWithId)
-
-        // save to firestore
         docRef.set(folderWithId)
     }
 
@@ -61,10 +62,7 @@ class JournalRepository(private val journalDao: JournalDao) {
 
         val entryWithId = entry.copy(id = docRef.id, userId = uid)
 
-        // save locally
         journalDao.insertEntry(entryWithId)
-
-        // then save to cloud
         docRef.set(entryWithId)
     }
 
@@ -92,12 +90,10 @@ class JournalRepository(private val journalDao: JournalDao) {
         journalDao.clearDetailedNodes()
     }
 
-    // update folder/entry
-
     suspend fun updateFolder(folder: Folder) {
         val uid = auth.currentUser?.uid ?: return
         val folderToUpdate = folder.copy(userId = uid)
-        
+
         journalDao.updateFolder(folderToUpdate)
 
         db.collection("users")
@@ -120,10 +116,7 @@ class JournalRepository(private val journalDao: JournalDao) {
             .set(entryToUpdate)
     }
 
-    // delete folder/entry
-
     suspend fun deleteFolder(folder: Folder) {
-
         journalDao.deleteFolder(folder)
 
         val uid = auth.currentUser?.uid ?: return
@@ -132,11 +125,9 @@ class JournalRepository(private val journalDao: JournalDao) {
             .collection("folders")
             .document(folder.id)
             .delete()
-
     }
 
     suspend fun deleteEntry(entry: JournalEntry) {
-
         journalDao.deleteEntry(entry)
 
         val uid = auth.currentUser?.uid ?: return
@@ -145,10 +136,7 @@ class JournalRepository(private val journalDao: JournalDao) {
             .collection("entries")
             .document(entry.id)
             .delete()
-
     }
-
-    // get by id
 
     suspend fun getFolderById(id: String) =
         journalDao.getFolderById(id)
@@ -156,24 +144,32 @@ class JournalRepository(private val journalDao: JournalDao) {
     suspend fun getEntryById(id: String) =
         journalDao.getEntryById(id)
 
-    // sync
-
     fun startSync() {
         val uid = auth.currentUser?.uid ?: return
         if (syncedUserId == uid) return
+
+        stopSync()
         syncedUserId = uid
 
-        // sync entries
-        db.collection("users")
+        entriesListener = db.collection("users")
             .document(uid)
             .collection("entries")
-            .addSnapshotListener { snapshot, _ ->
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    error.printStackTrace()
+                    return@addSnapshotListener
+                }
+
                 val entries = snapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(JournalEntry::class.java)?.copy(id = doc.id, userId = uid)
+                    doc.toObject(JournalEntry::class.java)?.copy(
+                        id = doc.id,
+                        userId = uid
+                    )
                 } ?: emptyList()
-                
+
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
+                        journalDao.clearEntries()
                         journalDao.insertEntries(entries)
                     } catch (e: Exception) {
                         e.printStackTrace()
@@ -181,22 +177,140 @@ class JournalRepository(private val journalDao: JournalDao) {
                 }
             }
 
-        // sync folders
-        db.collection("users")
+        foldersListener = db.collection("users")
             .document(uid)
             .collection("folders")
-            .addSnapshotListener { snapshot, _ ->
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    error.printStackTrace()
+                    return@addSnapshotListener
+                }
+
                 val folders = snapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(Folder::class.java)?.copy(id = doc.id, userId = uid)
+                    doc.toObject(Folder::class.java)?.copy(
+                        id = doc.id,
+                        userId = uid
+                    )
                 } ?: emptyList()
 
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
+                        journalDao.clearFolders()
                         journalDao.insertFolders(folders)
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
                 }
+
+                val activeFolderIds = folders.map { it.id }.toSet()
+
+                val removedSentimentFolderIds = sentimentNodeListeners.keys - activeFolderIds
+                removedSentimentFolderIds.forEach { folderId ->
+                    sentimentNodeListeners.remove(folderId)?.remove()
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            journalDao.deleteSentimentNodesByFolder(folderId)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+
+                val removedDetailedFolderIds = detailedNodeListeners.keys - activeFolderIds
+                removedDetailedFolderIds.forEach { folderId ->
+                    detailedNodeListeners.remove(folderId)?.remove()
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            journalDao.deleteDetailedNodesByFolder(folderId)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+
+                folders.forEach { folder ->
+                    val folderId = folder.id
+
+                    if (!sentimentNodeListeners.containsKey(folderId)) {
+                        val listener = db.collection("users")
+                            .document(uid)
+                            .collection("folders")
+                            .document(folderId)
+                            .collection("sentiment_nodes")
+                            .addSnapshotListener { nodeSnapshot, nodeError ->
+                                if (nodeError != null) {
+                                    nodeError.printStackTrace()
+                                    return@addSnapshotListener
+                                }
+
+                                val nodes = nodeSnapshot?.documents?.mapNotNull { doc ->
+                                    doc.toObject(SentimentNode::class.java)?.copy(
+                                        id = doc.id,
+                                        folderId = folderId
+                                    )
+                                } ?: emptyList()
+
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    try {
+                                        journalDao.deleteSentimentNodesByFolder(folderId)
+                                        journalDao.insertSentimentNodes(nodes)
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    }
+                                }
+                            }
+
+                        sentimentNodeListeners[folderId] = listener
+                    }
+
+                    if (!detailedNodeListeners.containsKey(folderId)) {
+                        val listener = db.collection("users")
+                            .document(uid)
+                            .collection("folders")
+                            .document(folderId)
+                            .collection("detailed_nodes")
+                            .addSnapshotListener { nodeSnapshot, nodeError ->
+                                if (nodeError != null) {
+                                    nodeError.printStackTrace()
+                                    return@addSnapshotListener
+                                }
+
+                                val nodes = nodeSnapshot?.documents?.mapNotNull { doc ->
+                                    doc.toObject(DetailedNode::class.java)?.copy(
+                                        id = doc.id,
+                                        folderId = folderId
+                                    )
+                                } ?: emptyList()
+
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    try {
+                                        journalDao.deleteDetailedNodesByFolder(folderId)
+                                        journalDao.insertDetailedNodes(nodes)
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    }
+                                }
+                            }
+
+                        detailedNodeListeners[folderId] = listener
+                    }
+                }
             }
+    }
+
+    fun stopSync() {
+        entriesListener?.remove()
+        entriesListener = null
+
+        foldersListener?.remove()
+        foldersListener = null
+
+        sentimentNodeListeners.values.forEach { it.remove() }
+        sentimentNodeListeners.clear()
+
+        detailedNodeListeners.values.forEach { it.remove() }
+        detailedNodeListeners.clear()
+
+        syncedUserId = null
     }
 }

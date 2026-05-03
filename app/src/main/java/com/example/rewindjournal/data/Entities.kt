@@ -74,13 +74,14 @@ data class JournalEntry(
     indices = [
         Index(value = ["folderId"]),
         Index(value = ["entryId"]),
-        Index(value = ["folderId", "orderIndex"])
+        Index(value = ["folderId", "orderIndex"]),
+        Index(value = ["folderId", "timestamp"])
     ]
 )
 data class SentimentNode(
     @PrimaryKey val id: String = "",
-    val folderId: String,
-    val entryId: String,
+    val folderId: String = "",
+    val entryId: String = "",
     val entryTitle: String = "",
     val generatedTitle: String = "",
     val timestamp: Long = System.currentTimeMillis(),
@@ -117,8 +118,8 @@ data class SentimentNode(
 )
 data class DetailedNode(
     @PrimaryKey val id: String = "",
-    val folderId: String,
-    val entryId: String,
+    val folderId: String = "",
+    val entryId: String = "",
     val entryTitle: String = "",
     val generatedTitle: String = "",
     val timestamp: Long = System.currentTimeMillis(),
@@ -130,4 +131,4 @@ data class DetailedNode(
     val extractedLocations: String = "[]",
     val extractedEvents: String = "[]",
     val entityRecords: String = "[]"
-) 
+)

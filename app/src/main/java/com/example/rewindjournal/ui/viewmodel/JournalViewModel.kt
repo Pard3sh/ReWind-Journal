@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.json.JSONArray
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -42,11 +43,24 @@ data class TimelineMoment(
     val folderColor: Int? = null
 )
 
+data class FolderTimelineNode(
+    val id: String,
+    val entryId: String,
+    val title: String,
+    val subtitle: String,
+    val timestamp: Long,
+    val location: String,
+    val emotionLabel: String,
+    val sentimentLabel: String,
+    val events: List<String> = emptyList(),
+    val locations: List<String> = emptyList()
+)
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class JournalViewModel(private val repository: JournalRepository) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
-    private val gENERALFOLDERID = "general"
+    private val generalFolderId = "general"
     val searchQuery: StateFlow<String> = _searchQuery
 
     private val _userId = MutableStateFlow(FirebaseAuth.getInstance().currentUser?.uid ?: "anonymous")
@@ -85,10 +99,9 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
                 )
             }
 
-            // Virtual General folder (id = "general")
             val generalCount = entries.count { it.folderId == null }
             val generalFolder = FolderSummary(
-                id = gENERALFOLDERID,
+                id = generalFolderId,
                 name = "General",
                 entryCount = generalCount,
                 description = "Unorganized reflections and quick notes.",
@@ -102,7 +115,7 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
             } else {
                 allFolders.filter {
                     it.name.contains(query, ignoreCase = true) ||
-                    it.description.contains(query, ignoreCase = true)
+                        it.description.contains(query, ignoreCase = true)
                 }
             }
         }
@@ -133,7 +146,7 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
             } else {
                 mapped.filter {
                     it.title.contains(query, ignoreCase = true) ||
-                    it.body.contains(query, ignoreCase = true)
+                        it.body.contains(query, ignoreCase = true)
                 }
             }
         }
@@ -147,7 +160,6 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         _searchQuery.value = query
     }
 
-    // add location
     fun addEntry(
         title: String,
         body: String = "",
@@ -161,7 +173,7 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
                     userId = userId,
                     title = title.ifBlank { "Untitled entry" },
                     body = body,
-                    folderId = if (folderId == gENERALFOLDERID) null else folderId,
+                    folderId = if (folderId == generalFolderId) null else folderId,
                     timestamp = System.currentTimeMillis(),
                     latitude = latitude,
                     longitude = longitude
@@ -177,7 +189,7 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
                     existingEntry.copy(
                         title = title,
                         body = body,
-                        folderId = if (folderId == gENERALFOLDERID) null else folderId,
+                        folderId = if (folderId == generalFolderId) null else folderId,
                         timestamp = System.currentTimeMillis(),
                         latitude = existingEntry.latitude,
                         longitude = existingEntry.longitude
@@ -232,8 +244,10 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
 
     fun getEntriesByFolder(folderId: String): Flow<List<TimelineMoment>> =
         _userId.flatMapLatest { currentUid ->
-            val targetEntries = if (folderId == gENERALFOLDERID) {
-                repository.getAllEntries(currentUid).map { it.filter { entry -> entry.folderId == null } }
+            val targetEntries = if (folderId == generalFolderId) {
+                repository.getAllEntries(currentUid).map { entries ->
+                    entries.filter { entry -> entry.folderId == null }
+                }
             } else {
                 repository.getEntriesByFolder(folderId, currentUid)
             }
@@ -265,6 +279,99 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         }
     }
 
+    fun getFolderFlow(folderId: String): Flow<Folder?> =
+        repository.getFolderFlow(folderId)
+
+    fun getSentimentNodesByFolder(folderId: String): Flow<List<FolderTimelineNode>> =
+        repository.getSentimentNodesByFolder(folderId).map { nodes ->
+            nodes.map { node ->
+                FolderTimelineNode(
+                    id = node.id,
+                    entryId = node.entryId,
+                    title = node.generatedTitle.ifBlank { node.entryTitle },
+                    subtitle = formatTimelineSubtitle(
+                        timestamp = node.timestamp,
+                        emotion = node.emotionLabel,
+                        location = node.savedLocation
+                    ),
+                    timestamp = node.timestamp,
+                    location = node.savedLocation,
+                    emotionLabel = node.emotionLabel,
+                    sentimentLabel = sentimentLabelFromScore(node.sentimentScore),
+                    events = parseStoredList(node.extractedEvents),
+                    locations = parseStoredList(node.extractedLocations)
+                )
+            }
+        }
+
+    fun getDetailedNodesByFolder(folderId: String): Flow<List<FolderTimelineNode>> =
+        repository.getDetailedNodesByFolder(folderId).map { nodes ->
+            nodes.map { node ->
+                FolderTimelineNode(
+                    id = node.id,
+                    entryId = node.entryId,
+                    title = node.generatedTitle.ifBlank { node.entryTitle },
+                    subtitle = formatTimelineSubtitle(
+                        timestamp = node.timestamp,
+                        emotion = node.emotionLabel.ifBlank { node.sentimentLabel },
+                        location = node.savedLocation
+                    ),
+                    timestamp = node.timestamp,
+                    location = node.savedLocation,
+                    emotionLabel = node.emotionLabel,
+                    sentimentLabel = node.sentimentLabel,
+                    events = parseStoredList(node.extractedEvents),
+                    locations = parseStoredList(node.extractedLocations)
+                )
+            }
+        }
+
+    private fun formatTimelineSubtitle(
+        timestamp: Long,
+        emotion: String,
+        location: String
+    ): String {
+        val datePart = formatSubtitle(timestamp, null)
+        return when {
+            emotion.isNotBlank() && location.isNotBlank() -> "$datePart · $emotion · $location"
+            emotion.isNotBlank() -> "$datePart · $emotion"
+            location.isNotBlank() -> "$datePart · $location"
+            else -> datePart
+        }
+    }
+
+    private fun sentimentLabelFromScore(score: Float): String {
+        return when {
+            score >= 0.6f -> "Very Positive"
+            score >= 0.2f -> "Positive"
+            score > -0.2f -> "Neutral"
+            score >= -0.6f -> "Negative"
+            else -> "Very Negative"
+        }
+    }
+
+   private fun parseStoredList(raw: String): List<String> {
+        if (raw.isBlank() || raw == "[]") return emptyList()
+
+        return try {
+            val jsonArray = JSONArray(raw)
+            List(jsonArray.length()) { index ->
+                jsonArray.optString(index).trim()
+            }.filter { it.isNotBlank() }
+        } catch (_: Exception) {
+            raw.removePrefix("[")
+                .removeSuffix("]")
+                .split(",")
+                .map { item ->
+                    item.trim().removeSurrounding("\"").removeSurrounding("'")
+                }
+                .filter { it.isNotBlank() }
+        }
+    }
+
+    fun parseListForUi(raw: String): List<String> =
+        parseStoredList(raw)
+
     private fun formatSubtitle(timestamp: Long, folderName: String?): String {
         val now = System.currentTimeMillis()
         val diff = now - timestamp
@@ -287,7 +394,8 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as JournalApplication)
+                val application =
+                    this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as JournalApplication
                 JournalViewModel(application.repository)
             }
         }
