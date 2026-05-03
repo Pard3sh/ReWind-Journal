@@ -42,6 +42,16 @@ fun HomeScreen(viewModel: JournalViewModel, onEntryClick: (TimelineMoment) -> Un
     ) {
         item { Spacer(modifier = Modifier.height(8.dp)) }
 
+        item {
+            Text(
+//                change name to match user
+                text = "Welcome back, Angel!",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
+
         item { AffirmationScreen() }
 
 
@@ -53,13 +63,13 @@ fun HomeScreen(viewModel: JournalViewModel, onEntryClick: (TimelineMoment) -> Un
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Recent entries",
+                        text = "Recent Entries",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Bold
                     )
                 }
                 Text(
-                    text = "Reflections from your past week.",
+                    text = "Your latest reflections at a glance.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

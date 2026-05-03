@@ -12,6 +12,8 @@ import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import com.example.rewindjournal.RewindJournalApp
 import com.example.rewindjournal.ui.viewmodel.AuthViewModel
 import com.example.rewindjournal.ui.viewmodel.JournalViewModel
@@ -132,8 +134,11 @@ fun LoadingScreen() {
         ) {
 
             Text(
-                text = "Rewind Journal",
-                style = MaterialTheme.typography.headlineMedium
+                text = "ReWind Journal",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                fontStyle = FontStyle.Italic,
+                color = MaterialTheme.colorScheme.primary
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -162,17 +167,29 @@ fun SplashLoginScreen(
         ) {
 
             Text(
-                text = "Welcome",
-                style = MaterialTheme.typography.headlineMedium
+                text = "Welcome To ReWind Journal",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                fontStyle = FontStyle.Italic,
+                color = MaterialTheme.colorScheme.primary
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Capture Now. Revisit later.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = {
                     println("CLICKED")
                     onSignInClick()
-                }
+                },
+                shape = MaterialTheme.shapes.medium
             ) {
                 Text("Sign in with Google")
             }

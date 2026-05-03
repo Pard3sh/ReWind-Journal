@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -42,7 +43,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.rewindjournal.ui.components.FolderCard
 import com.example.rewindjournal.ui.components.SearchBar
@@ -112,9 +116,13 @@ fun FoldersScreen(
             item {
                 SectionHeader(
                     title = "Folders",
-                    subtitle = "Organize longer experiences into dedicated spaces.",
+                    subtitle = "Organize experiences into dedicated spaces.",
                     action = {
-                        TextButton(onClick = { showNewFolderDialog = true }) {
+                        Button(
+                            onClick = { showNewFolderDialog = true },
+                            shape = RoundedCornerShape(20.dp),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                        ) {
                             Icon(Icons.Default.CreateNewFolder, null)
                             Spacer(Modifier.width(4.dp))
                             Text("New Folder")
@@ -234,7 +242,10 @@ fun FolderDetailView(
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                    Button(onClick = { showQuickAdd = true }) {
+                    Button(
+                        onClick = { showQuickAdd = true },
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
                         Icon(Icons.Default.Add, null)
                         Spacer(Modifier.width(4.dp))
                         Text("New Entry")
@@ -298,7 +309,7 @@ fun FolderDetailView(
 fun FolderDialog(
     initialName: String = "",
     initialDescription: String = "",
-    initialColor: Color = Color(0xFFE91E63),
+    initialColor: Color = Color(0xFF4E378B),
     isEditing: Boolean = false,
     onDismiss: () -> Unit,
     onConfirm: (String, String, Int) -> Unit,
@@ -306,8 +317,10 @@ fun FolderDialog(
 ) {
     var name by remember { mutableStateOf(initialName) }
     var description by remember { mutableStateOf(initialDescription) }
+    val maxNameLength = 25
     
     val colors = listOf(
+        Color(0xFF4E378B), // Dark Purple
         Color(0xFFE91E63), // Pink
         Color(0xFF2196F3), // Blue
         Color(0xFF4CAF50), // Green
@@ -318,27 +331,53 @@ fun FolderDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (isEditing) "Edit Folder" else "New Folder") },
+        title = { 
+            Text(
+                if (isEditing) "Edit Folder" else "New Folder",
+//                style = MaterialTheme.typography.headlineSmall,
+//                fontWeight = FontWeight.Bold
+            ) 
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it },
+                    onValueChange = { if (it.length <= maxNameLength) name = it },
                     label = { Text("Folder Name") },
-                    modifier = Modifier.fillMaxWidth()
+                    supportingText = {
+                        Text(
+                            text = "${name.length} / $maxNameLength",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.End,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.primary,
+                    ),
+                    singleLine = true
                 )
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("Description") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.primary,
+                    )
                 )
                 
                 Column {
                     Text(
                         "Select Color",
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.primary,
+//                        fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
@@ -348,10 +387,10 @@ fun FolderDialog(
                         colors.forEach { color ->
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
+                                    .size(40.dp)
                                     .background(color, CircleShape)
                                     .border(
-                                        width = if (selectedColor == color) 2.dp else 0.dp,
+                                        width = if (selectedColor == color) 3.dp else 0.dp,
                                         color = if (selectedColor == color) MaterialTheme.colorScheme.outline else Color.Transparent,
                                         shape = CircleShape
                                     )
@@ -378,7 +417,8 @@ fun FolderDialog(
         confirmButton = {
             Button(
                 onClick = { if (name.isNotBlank()) onConfirm(name, description, selectedColor.toArgb()) },
-                enabled = name.isNotBlank()
+                enabled = name.isNotBlank(),
+                shape = RoundedCornerShape(20.dp)
             ) {
                 Text(if (isEditing) "Update" else "Create")
             }

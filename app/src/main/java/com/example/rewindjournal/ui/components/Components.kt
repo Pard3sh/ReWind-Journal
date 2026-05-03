@@ -1,5 +1,6 @@
 package com.example.rewindjournal.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -42,8 +44,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -236,6 +240,9 @@ fun EntryComposerCard(
 
     Card(
         shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
@@ -252,9 +259,9 @@ fun EntryComposerCard(
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = if (isEditing) "Update your reflection" else "Write a reflection",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold
+                        text = if (isEditing) "Update Reflection" else "New Entry",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
                     )
                 }
 
@@ -275,9 +282,14 @@ fun EntryComposerCard(
             OutlinedTextField(
                 value = title,
                 onValueChange = onTitleChange,
-                label = { Text("Title") },
+                placeholder = { Text("Enter Title Here", fontWeight = FontWeight.Bold) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.primary,
+                ),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences
                 )
@@ -288,10 +300,15 @@ fun EntryComposerCard(
             OutlinedTextField(
                 value = body,
                 onValueChange = onBodyChange,
-                label = { Text("Body") },
+                placeholder = { Text("Enter Entry Here", fontWeight = FontWeight.Bold) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp),
+                    .height(300.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.primary,
+                ),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences
                 )
@@ -299,37 +316,46 @@ fun EntryComposerCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedButton(
-                onClick = { showFolderPicker = true },
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Folder, null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Folder: $currentFolderName")
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (isEditing) {
-                    OutlinedButton(
-                        onClick = onCancelEdit,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Cancel")
-                    }
-                }
                 Button(
                     onClick = onSaveClick,
-                    modifier = Modifier.weight(1f)
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.weight(1.2f)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.EditNote,
-                        contentDescription = null
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(if (isEditing) "Update" else "Save")
+                    Text(if (isEditing) "Save Changes" else "Save Entry")
+                }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+
+                OutlinedButton(
+                    onClick = { showFolderPicker = true },
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.weight(1f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                ) {
+                    Icon(Icons.Default.BookmarkBorder, null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Assign Folder", maxLines = 1)
+                }
+            }
+            
+            if (isEditing) {
+                Spacer(modifier = Modifier.height(12.dp))
+                TextButton(
+                    onClick = onCancelEdit,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Cancel")
                 }
             }
         }
@@ -371,8 +397,8 @@ fun SectionHeader(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
             )
             Text(
                 text = subtitle,
@@ -397,6 +423,9 @@ fun FolderCard(
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
@@ -414,11 +443,11 @@ fun FolderCard(
                             .size(12.dp)
                             .background(Color(folder.color), CircleShape)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = folder.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
 
@@ -434,14 +463,14 @@ fun FolderCard(
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = "Edit Folder",
-                                modifier = Modifier.size(18.dp),
+                                modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = folder.description,
                 style = MaterialTheme.typography.bodyMedium,
@@ -460,6 +489,9 @@ fun TimelineCard(
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(

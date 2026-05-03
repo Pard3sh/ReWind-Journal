@@ -35,6 +35,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -103,8 +104,11 @@ fun RewindJournalApp(viewModel: JournalViewModel = viewModel(factory = JournalVi
                     Column {
                         Text(
                             text = "ReWind Journal",
+//                            style = MaterialTheme.typography.headlineSmall,
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Bold,
+                            fontStyle = FontStyle.Italic,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
                             text = "Capture now. Revisit later.",
@@ -159,11 +163,11 @@ fun RewindJournalApp(viewModel: JournalViewModel = viewModel(factory = JournalVi
 //        },
         bottomBar = {
             NavigationBar {
-                val items = listOf("Home", "Folders", "New", "Timeline")
+                val items = listOf("Home", "New Entry", "Folders", "Timeline")
                 val icons = listOf(
                     Icons.Default.Home,
-                    Icons.Default.BookmarkBorder,
                     Icons.Default.Add,
+                    Icons.Default.BookmarkBorder,
                     Icons.Default.Schedule
                 )
 
@@ -204,8 +208,8 @@ fun RewindJournalApp(viewModel: JournalViewModel = viewModel(factory = JournalVi
             } else {
                 when (selectedTab) {
                     0 -> HomeScreen(viewModel, onEntryClick = { editingEntryId = it.id })
-                    1 -> FoldersScreen(viewModel, onEntryClick = { editingEntryId = it.id })
-                    2 -> NewEntryScreen(viewModel, onSaveComplete = { selectedTab = 0 })
+                    1 -> NewEntryScreen(viewModel, onSaveComplete = { selectedTab = 0 })
+                    2 -> FoldersScreen(viewModel, onEntryClick = { editingEntryId = it.id })
                     3 -> TimelineScreen(viewModel, onEntryClick = { editingEntryId = it.id })
                 }
             }
