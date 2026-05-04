@@ -3,7 +3,7 @@
 ReWind Journal is a mobile journaling app built with Jetpack Compose (Material 3) for CS501. It focuses on making it easy to quickly capture daily reflections, organize them into folders, and later review recent moments.
 
 ## Note
-Check in slides are under our presentation folder!
+Check-in slides are under our presentation folder!
 
 ## Current Features
 
