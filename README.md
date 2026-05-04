@@ -4,7 +4,9 @@ ReWind Journal is a mobile journaling app built with Jetpack Compose (Material 3
 
 ## **Important** Note
 Check-in slides are under our presentation folder!
-For graders testing the application! Follow the How To Run section, but to see the full functionality of the application please read the following:
+For graders testing the application! Follow the How To Run section, but to see the full functionality of the application ->
+
+# please read the following:
 
 Our application has base level journalling features, allowing users to create entries and folders. The novelty of our application comes entirely from the timeline generation, event & sentiment extraction, mood insights and more. To test this out, create a custom folder (any one that you make that is not the default general folder) and create several detailed entries. Grading does not occur over a long time period, but the slightly different time stamps will still create a properly linear timeline. Then, find go to this repo (which houses our timeline-generation batch job that analyzes and builds/updates timelines based on new entries): https://github.com/Pard3sh/ReWind-Timeline-Generator/. (Consult the readmes --specifically the DOCKER_GITHUB_ACTIONS.md there for very detailed instructions) From there, go to Github actions and be sure to rerun the action. This will trigger the script to analyze your entries in the Cloud Database and then you will be able to see the generated timelines for your custom folder. The action runs automatically every 24 hours or so, but to expedite your grading, running the action manually will help. In a production level application, we would have some cleaner method of orchestrating this back-end service but this had to be descoped due to our lack of time and experience. 
 
