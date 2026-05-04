@@ -24,12 +24,19 @@ fun TimelineScreen(
     val sentimentNodes by viewModel.getSentimentNodesByFolder(folderId).collectAsState(initial = emptyList())
     val detailedNodes by viewModel.getDetailedNodesByFolder(folderId).collectAsState(initial = emptyList())
 
-    // Single unified timeline:
-    // prefer detailedNodes when both exist for the same entry, then order newest → oldest for display
-    val allNodes = remember(sentimentNodes, detailedNodes) {
+    val allNodes = remember(sentimentNodes, detailedNodes, viewModel) {
         (detailedNodes + sentimentNodes)
             .distinctBy { it.entryId }
             .sortedByDescending { it.timestamp }
+            .map { node ->
+                val extractedLocations = viewModel.parseListForUi(node.extractedLocations)
+                val bestLocation = node.savedLocation.takeIf { it.isNotBlank() }
+                    ?: extractedLocations.firstOrNull().orEmpty()
+
+                val subtitle = bestLocation.ifBlank { node.subtitle }
+
+                node.copy(subtitle = subtitle)
+            }
     }
 
     val topEvents = folder?.let { viewModel.parseListForUi(it.topEvents) } ?: emptyList()
@@ -37,11 +44,11 @@ fun TimelineScreen(
 
     val hasTimelineData =
         folder?.summaryText?.isNotBlank() == true ||
-                folder?.sentimentTrend?.isNotBlank() == true ||
-                topEvents.isNotEmpty() ||
-                topLocations.isNotEmpty() ||
-                allNodes.isNotEmpty() ||
-                folderHasStats(folder)
+            folder?.sentimentTrend?.isNotBlank() == true ||
+            topEvents.isNotEmpty() ||
+            topLocations.isNotEmpty() ||
+            allNodes.isNotEmpty() ||
+            folderHasStats(folder)
 
     if (!hasTimelineData) {
         Box(
@@ -60,7 +67,6 @@ fun TimelineScreen(
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Folder header
         item {
             SectionHeader(
                 title = folder?.name ?: "Timeline",
@@ -69,7 +75,6 @@ fun TimelineScreen(
             )
         }
 
-        // Insights (summary + trend + top events/locations)
         folder?.let { f ->
             item {
                 Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
@@ -86,18 +91,14 @@ fun TimelineScreen(
                 }
             }
 
-            // Mood trend + graph side-by-side
             if (allNodes.isNotEmpty()) {
                 item {
                     Row(
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Mood trend column (wider)
                         Column(
-                            modifier = Modifier
-                                .weight(1.4f)
+                            modifier = Modifier.weight(1.4f)
                         ) {
                             Text(
                                 text = "Mood Trend",
@@ -107,10 +108,8 @@ fun TimelineScreen(
                             MoodTrendCard(nodes = allNodes)
                         }
 
-                        // Graph column (narrower)
                         Column(
-                            modifier = Modifier
-                                .weight(1f)
+                            modifier = Modifier.weight(1f)
                         ) {
                             Text(
                                 text = "Mood Graph",
@@ -124,7 +123,6 @@ fun TimelineScreen(
             }
         }
 
-        // Optional stats bar if folder has counts
         folder?.let {
             if (folderHasStats(it)) {
                 item {
@@ -135,13 +133,17 @@ fun TimelineScreen(
             }
         }
 
-        // Timeline list
         if (allNodes.isNotEmpty()) {
             item {
                 Text(
                     text = "Timeline",
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+                    modifier = Modifier.padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 16.dp,
+                        bottom = 8.dp
+                    )
                 )
             }
 
@@ -179,8 +181,8 @@ fun TimelineScreen(
 private fun folderHasStats(folder: Folder?): Boolean {
     if (folder == null) return false
     return folder.veryPositiveCount > 0 ||
-            folder.positiveCount > 0 ||
-            folder.neutralCount > 0 ||
-            folder.negativeCount > 0 ||
-            folder.veryNegativeCount > 0
+        folder.positiveCount > 0 ||
+        folder.neutralCount > 0 ||
+        folder.negativeCount > 0 ||
+        folder.veryNegativeCount > 0
 }
