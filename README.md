@@ -27,7 +27,7 @@ Our application has base level journalling features, allowing users to create en
 
 **A significant portion of the backend is in the following repo:** https://github.com/Pard3sh/ReWind-Timeline-Generator/
 
-Using ML tools to analyze journal entries was deemed to heavy to run on each local device, so we decided to run a python script that analyzes new entries and generates/updates timeline data as a recurring cloud job. The link to the repo, which the TA and instructor have been added as collaborators for, is here: https://github.com/Pard3sh/ReWind-Timeline-Generator/. The repo consists of a containerized python package that is run as a Cloub Job in the Google Cloud platform we use. It adds to the cloud database, which is then synced locally and displayed on the Android timeline screen. More documentation is in the link. 
+Using ML tools to analyze journal entries was deemed to heavy to run on each local device, so we decided to run a python script that analyzes new entries and generates/updates timeline data as a recurring Github Action. The link to the repo, which the TA and instructor have been added as collaborators for, is here: https://github.com/Pard3sh/ReWind-Timeline-Generator/. The repo consists of a containerized python package that is run as a Github action. It adds to the cloud database, which is then synced locally and displayed on the Android timeline screen. More documentation is in the link. Very essential to browse the README there to grade this project.
 
 
 ## How to Run
