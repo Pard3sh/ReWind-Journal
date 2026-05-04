@@ -1,6 +1,7 @@
 package com.example.rewindjournal.data
 
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.CoroutineScope
@@ -161,10 +162,15 @@ class JournalRepository(private val journalDao: JournalDao) {
                 }
 
                 val entries = snapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(JournalEntry::class.java)?.copy(
-                        id = doc.id,
-                        userId = uid
-                    )
+                    try {
+                        doc.toObject(JournalEntry::class.java)?.copy(
+                            id = doc.id,
+                            userId = uid
+                        )
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        null
+                    }
                 } ?: emptyList()
 
                 CoroutineScope(Dispatchers.IO).launch {
@@ -187,10 +193,7 @@ class JournalRepository(private val journalDao: JournalDao) {
                 }
 
                 val folders = snapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(Folder::class.java)?.copy(
-                        id = doc.id,
-                        userId = uid
-                    )
+                    doc.toFolder(uid)
                 } ?: emptyList()
 
                 CoroutineScope(Dispatchers.IO).launch {
@@ -244,10 +247,15 @@ class JournalRepository(private val journalDao: JournalDao) {
                                 }
 
                                 val nodes = nodeSnapshot?.documents?.mapNotNull { doc ->
-                                    doc.toObject(SentimentNode::class.java)?.copy(
-                                        id = doc.id,
-                                        folderId = folderId
-                                    )
+                                    try {
+                                        doc.toObject(SentimentNode::class.java)?.copy(
+                                            id = doc.id,
+                                            folderId = folderId
+                                        )
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                        null
+                                    }
                                 } ?: emptyList()
 
                                 CoroutineScope(Dispatchers.IO).launch {
@@ -276,10 +284,15 @@ class JournalRepository(private val journalDao: JournalDao) {
                                 }
 
                                 val nodes = nodeSnapshot?.documents?.mapNotNull { doc ->
-                                    doc.toObject(DetailedNode::class.java)?.copy(
-                                        id = doc.id,
-                                        folderId = folderId
-                                    )
+                                    try {
+                                        doc.toObject(DetailedNode::class.java)?.copy(
+                                            id = doc.id,
+                                            folderId = folderId
+                                        )
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                        null
+                                    }
                                 } ?: emptyList()
 
                                 CoroutineScope(Dispatchers.IO).launch {
@@ -312,5 +325,58 @@ class JournalRepository(private val journalDao: JournalDao) {
         detailedNodeListeners.clear()
 
         syncedUserId = null
+    }
+}
+
+fun DocumentSnapshot.toFolder(userId: String): Folder? {
+    return try {
+        //try standard deserialization
+        this.toObject(Folder::class.java)?.copy(
+            id = this.id,
+            userId = userId,
+            startTimestamp = getSafeLong("startTimestamp"),
+            endTimestamp = getSafeLong("endTimestamp")
+        )
+    } catch (e: Exception) {
+        //manual mapping if automatic deserialization fails
+        try {
+            Folder(
+                id = this.id,
+                userId = userId,
+                name = getString("name") ?: "",
+                description = getString("description") ?: "",
+                color = getLong("color")?.toInt() ?: 0xFF6200EE.toInt(),
+                timestamp = getSafeLong("timestamp") ?: System.currentTimeMillis(),
+                entryCount = getLong("entryCount")?.toInt() ?: 0,
+                averageSentiment = getDouble("averageSentiment")?.toFloat() ?: 0f,
+                sentimentTrend = getString("sentimentTrend") ?: "",
+                topLocations = getString("topLocations") ?: "[]",
+                topEvents = getString("topEvents") ?: "[]",
+                summaryText = getString("summaryText") ?: "",
+                startTimestamp = getSafeLong("startTimestamp"),
+                endTimestamp = getSafeLong("endTimestamp"),
+                veryPositiveCount = getLong("veryPositiveCount")?.toInt() ?: 0,
+                positiveCount = getLong("positiveCount")?.toInt() ?: 0,
+                neutralCount = getLong("neutralCount")?.toInt() ?: 0,
+                negativeCount = getLong("negativeCount")?.toInt() ?: 0,
+                veryNegativeCount = getLong("veryNegativeCount")?.toInt() ?: 0
+            )
+        } catch (e2: Exception) {
+            e2.printStackTrace()
+            null
+        }
+    }
+}
+
+fun DocumentSnapshot.getSafeLong(field: String): Long? {
+    return try {
+        when (val value = get(field)) {
+            is Long -> value
+            is String -> value.toLongOrNull()
+            is Number -> value.toLong()
+            else -> null
+        }
+    } catch (e: Exception) {
+        null
     }
 }

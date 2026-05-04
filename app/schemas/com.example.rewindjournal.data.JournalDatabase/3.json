@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 3,
-    "identityHash": "baee9be1b9fb8c06abbb9e26c7d37d95",
+    "identityHash": "970ab3d97061622a1efd7984643f587e",
     "entities": [
       {
         "tableName": "folders",
@@ -326,16 +326,6 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_sentiment_nodes_folderId_orderIndex` ON `${TABLE_NAME}` (`folderId`, `orderIndex`)"
-          },
-          {
-            "name": "index_sentiment_nodes_folderId_timestamp",
-            "unique": false,
-            "columnNames": [
-              "folderId",
-              "timestamp"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_sentiment_nodes_folderId_timestamp` ON `${TABLE_NAME}` (`folderId`, `timestamp`)"
           }
         ],
         "foreignKeys": [
@@ -516,7 +506,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'baee9be1b9fb8c06abbb9e26c7d37d95')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '970ab3d97061622a1efd7984643f587e')"
     ]
   }
 }
