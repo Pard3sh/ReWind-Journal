@@ -29,9 +29,8 @@ fun TimelineScreen(
             .distinctBy { it.entryId }
             .sortedByDescending { it.timestamp }
             .map { node ->
-                val extractedLocations = viewModel.parseListForUi(node.extractedLocations)
-                val bestLocation = node.savedLocation.takeIf { it.isNotBlank() }
-                    ?: extractedLocations.firstOrNull().orEmpty()
+                val bestLocation = node.location.takeIf { it.isNotBlank() }
+                    ?: node.locations.firstOrNull().orEmpty()
 
                 val subtitle = bestLocation.ifBlank { node.subtitle }
 
