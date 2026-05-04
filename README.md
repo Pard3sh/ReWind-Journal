@@ -9,20 +9,30 @@ Check in slides are under our presentation folder!
 
 - Home screen with a daily affirmation!
 - Basic journal entry composer
-- Sample folders
+- Add/Delete/Update Folders
 - Recent moments section 
 - Bottom navigation
-- Folder system with the ability to create, update, and delete folders
 - Journal entries with options to update and delete entries
 - Loading screen when app is first opened
+- Timeline screen in progress
+- Cloud backup of all data; sync is done whenever the user has internet connection.
+- Asks user for location permissions and, if granted, saves location data with each entry.
 - Authetication through google (User is now able to connect their journal to their account)
+- Cloud jobs that run sentiment analysis on all user created folders (needed to descope the scalability and the extent of analysis)
+
+## Sentiment Analysis and Timeline Generator
+
+**A significant portion of the backend is in the following repo:** https://github.com/Pard3sh/ReWind-Timeline-Generator/
+
+Using ML tools to analyze journal entries was deemed to heavy to run on each local device, so we decided to run a python script that analyzes new entries and generates/updates timeline data as a recurring cloud job. The link to the repo, which the TA and instructor have been added as collaborators for, is here: https://github.com/Pard3sh/ReWind-Timeline-Generator/. The repo consists of a containerized python package that is run as a Cloub Job in the Google Cloud platform we use. It adds to the cloud database, which is then synced locally and displayed on the Android timeline screen. More documentation is in the link. 
 
 
 ## How to Run
 
 1. Open the project in Android Studio
 2. Sync Gradle and build the project.
-3. Run the app on an Android emulator or physical device (API 24+). Ensure emulator has google playstore. 
+3. Log into google on the emulator device---a Google account is needed to access the application
+4. Run the app on an Android emulator or physical device (API 24+). Ensure emulator has google playstore. 
 
 ## Screenshots
 
@@ -59,7 +69,7 @@ Check in slides are under our presentation folder!
 
 ## Notes
 
-This version intentionally focuses on the core journaling experience. Planned next steps include actual data persistence and AI-powered insights.
+This version has completed the core journalling experience and has made significant progress on implenmenting AI insights and the generation of a timeline. 
 
 ## View Models (full code removed to shorten ReadMe)
 
