@@ -52,6 +52,7 @@ data class FolderTimelineNode(
     val location: String,
     val emotionLabel: String,
     val sentimentLabel: String,
+    val sentimentScore: Float,
     val events: List<String> = emptyList(),
     val locations: List<String> = emptyList()
 )
@@ -298,6 +299,7 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
                     location = node.savedLocation,
                     emotionLabel = node.emotionLabel,
                     sentimentLabel = sentimentLabelFromScore(node.sentimentScore),
+                    sentimentScore = node.sentimentScore,
                     events = parseStoredList(node.extractedEvents),
                     locations = parseStoredList(node.extractedLocations)
                 )
@@ -320,6 +322,7 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
                     location = node.savedLocation,
                     emotionLabel = node.emotionLabel,
                     sentimentLabel = node.sentimentLabel,
+                    sentimentScore = node.sentimentScore,
                     events = parseStoredList(node.extractedEvents),
                     locations = parseStoredList(node.extractedLocations)
                 )
@@ -388,6 +391,31 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
             "$timeLabel · $folderName"
         } else {
             timeLabel
+        }
+    }
+
+    fun formatAbsoluteDate(timestamp: Long): String {
+        return SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(timestamp))
+    }
+
+    fun formatAbsoluteDateWithRelativeHint(timestamp: Long): String {
+        val absolute = formatAbsoluteDate(timestamp)
+
+        val now = System.currentTimeMillis()
+        val diff = now - timestamp
+        val days = TimeUnit.MILLISECONDS.toDays(diff)
+
+        val relativeHint = when {
+            days == 0L -> "Today"
+            days == 1L -> "Yesterday"
+            days in 2..6 -> "$days days ago"
+            else -> null
+        }
+
+        return if (relativeHint != null) {
+            "$absolute ($relativeHint)"
+        } else {
+            absolute
         }
     }
 

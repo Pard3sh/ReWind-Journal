@@ -512,8 +512,17 @@ fun TimelineInsightsCard(
     summaryText: String,
     sentimentTrend: String,
     topEvents: List<String>,
-    topLocations: List<String>
+    topLocations: List<String>,
+    startTimestamp: Long?,
+    endTimestamp: Long?,
+    formatDate: (Long) -> String
 ) {
+    val hasDateRange = startTimestamp != null && endTimestamp != null
+    val hasEvents = topEvents.isNotEmpty()
+    val hasLocations = topLocations.isNotEmpty()
+    val hasSummary = summaryText.isNotBlank()
+    val hasTrend = sentimentTrend.isNotBlank()
+
     Card(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
@@ -536,7 +545,16 @@ fun TimelineInsightsCard(
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
 
-            if (sentimentTrend.isNotBlank()) {
+            if (hasDateRange) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "${formatDate(startTimestamp!!)} → ${formatDate(endTimestamp!!)}",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+
+            if (hasTrend) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = "Mood trend: $sentimentTrend",
@@ -546,16 +564,7 @@ fun TimelineInsightsCard(
                 )
             }
 
-            if (summaryText.isNotBlank()) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = summaryText,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            }
-
-            if (topEvents.isNotEmpty()) {
+            if (hasEvents) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "Top events",
@@ -571,7 +580,7 @@ fun TimelineInsightsCard(
                 }
             }
 
-            if (topLocations.isNotEmpty()) {
+            if (hasLocations) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "Top locations",
@@ -585,6 +594,15 @@ fun TimelineInsightsCard(
                         TimelineInsightChip(text = item)
                     }
                 }
+            }
+
+            if (hasSummary) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = summaryText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
             }
         }
     }
@@ -810,6 +828,120 @@ fun StraightTimelineMoment(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MoodGraphCard(nodes: List<FolderTimelineNode>) {
+    if (nodes.isEmpty()) return
+
+    // oldest → newest for the graph
+    val sorted = remember(nodes) {
+        nodes.sortedBy { it.timestamp }
+    }
+
+    Card(
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFF3E5F5)
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(180.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp, vertical = 16.dp)
+        ) {
+            val lineColor = MaterialTheme.colorScheme.primary
+            val gridColor = Color(0xFFD8CDEB)
+
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val w = size.width
+                val h = size.height
+
+                if (sorted.isEmpty()) return@Canvas
+
+                // Three horizontal guide lines (top / middle / bottom)
+                val topY = h * 0.2f
+                val midY = h * 0.5f
+                val botY = h * 0.8f
+
+                drawLine(
+                    color = gridColor,
+                    start = Offset(0f, topY),
+                    end = Offset(w, topY),
+                    alpha = 0.5f
+                )
+                drawLine(
+                    color = gridColor,
+                    start = Offset(0f, midY),
+                    end = Offset(w, midY),
+                    alpha = 0.5f
+                )
+                drawLine(
+                    color = gridColor,
+                    start = Offset(0f, botY),
+                    end = Offset(w, botY),
+                    alpha = 0.5f
+                )
+
+                // Map sentimentScore ([-1,1]) to Y between topY and botY
+                fun scoreToY(score: Float): Float {
+                    val clamped = score.coerceIn(-1f, 1f)
+                    val t = (1f - (clamped + 1f) / 2f) // +1→0, -1→1
+                    return topY + (botY - topY) * t
+                }
+
+                val count = sorted.size
+                val stepX = if (count > 1) w / (count - 1) else 0f
+
+                val points = sorted.mapIndexed { index, node ->
+                    val x = if (count == 1) w / 2f else stepX * index
+                    val y = scoreToY(node.sentimentScore)
+                    Offset(x, y)
+                }
+
+                // Faint shadow line
+                for (i in 0 until points.lastIndex) {
+                    val p1 = points[i]
+                    val p2 = points[i + 1]
+                    drawLine(
+                        color = lineColor.copy(alpha = 0.25f),
+                        start = p1,
+                        end = p2,
+                        strokeWidth = 6f
+                    )
+                }
+
+                // Main line
+                for (i in 0 until points.lastIndex) {
+                    val p1 = points[i]
+                    val p2 = points[i + 1]
+                    drawLine(
+                        color = lineColor,
+                        start = p1,
+                        end = p2,
+                        strokeWidth = 4f
+                    )
+                }
+
+                // Points
+                points.forEach { p ->
+                    drawCircle(
+                        color = Color.White,
+                        radius = 7f,
+                        center = p
+                    )
+                    drawCircle(
+                        color = lineColor,
+                        radius = 4f,
+                        center = p
                     )
                 }
             }
