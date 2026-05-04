@@ -391,6 +391,8 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         }
     }
 
+    fun formatEntryDate(timestamp: Long): String = formatSubtitle(timestamp, null)
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {

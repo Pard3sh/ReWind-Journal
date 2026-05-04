@@ -1,26 +1,16 @@
 package com.example.rewindjournal.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.rewindjournal.data.Folder
-import com.example.rewindjournal.ui.components.FolderTimelineCard
-import com.example.rewindjournal.ui.components.SectionHeader
-import com.example.rewindjournal.ui.components.TimelineInsightsCard
-import com.example.rewindjournal.ui.components.TimelineStatsCard
+import com.example.rewindjournal.ui.components.*
 import com.example.rewindjournal.ui.viewmodel.JournalViewModel
 import com.example.rewindjournal.ui.viewmodel.TimelineMoment
 
@@ -34,19 +24,26 @@ fun TimelineScreen(
     val sentimentNodes by viewModel.getSentimentNodesByFolder(folderId).collectAsState(initial = emptyList())
     val detailedNodes by viewModel.getDetailedNodesByFolder(folderId).collectAsState(initial = emptyList())
 
+    // Combine and sort nodes for a unified timeline.
+    // Prefer detailedNodes if both exist for the same entry to avoid double counting.
+    val allNodes = remember(sentimentNodes, detailedNodes) {
+        (detailedNodes + sentimentNodes)
+            .distinctBy { it.entryId }
+            .sortedByDescending { it.timestamp }
+    }
+
     val topEvents = folder?.let { viewModel.parseListForUi(it.topEvents) } ?: emptyList()
     val topLocations = folder?.let { viewModel.parseListForUi(it.topLocations) } ?: emptyList()
 
-    val hasSentimentTimeline = sentimentNodes.isNotEmpty()
-    val hasEventTimeline = detailedNodes.isNotEmpty()
+//    val hasSentimentTimeline = sentimentNodes.isNotEmpty()
+//    val hasEventTimeline = detailedNodes.isNotEmpty()
 
     val hasTimelineData =
         folder?.summaryText?.isNotBlank() == true ||
             folder?.sentimentTrend?.isNotBlank() == true ||
             topEvents.isNotEmpty() ||
             topLocations.isNotEmpty() ||
-            hasSentimentTimeline ||
-            hasEventTimeline ||
+            allNodes.isNotEmpty() ||
             folderHasStats(folder)
 
     if (!hasTimelineData) {
@@ -66,83 +63,59 @@ fun TimelineScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
             SectionHeader(
                 title = folder?.name ?: "Timeline",
-                subtitle = "Patterns, sentiment, and key moments over time"
+                subtitle = "Patterns, sentiment, and key moments over time",
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
 
         folder?.let {
             item {
-                TimelineInsightsCard(
-                    folderName = it.name,
-                    summaryText = it.summaryText,
-                    sentimentTrend = it.sentimentTrend,
-                    topEvents = topEvents,
-                    topLocations = topLocations
-                )
+                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                    Text(
+                        text = "Mood Trend",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                    MoodTrendCard(nodes = allNodes)
+                }
             }
 
-            if (folderHasStats(it)) {
-                item {
-                    TimelineStatsCard(folder = it)
+            item {
+                Box(modifier = Modifier.padding(16.dp)) {
+                    TimelineInsightsCard(
+                        folderName = it.name,
+                        summaryText = it.summaryText,
+                        sentimentTrend = it.sentimentTrend,
+                        topEvents = topEvents,
+                        topLocations = topLocations
+                    )
                 }
             }
         }
 
-        if (hasSentimentTimeline) {
+        if (allNodes.isNotEmpty()) {
             item {
                 Text(
-                    text = "Sentiment Timeline",
+                    text = "Timeline",
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
                 )
             }
 
-            items(
-                items = sentimentNodes,
-                key = { node -> node.id }
-            ) { node ->
-                FolderTimelineCard(
-                    title = node.title,
-                    subtitle = node.subtitle,
+            itemsIndexed(
+                items = allNodes,
+                key = { _, node -> node.id }
+            ) { index, node ->
+                StraightTimelineMoment(
+                    node = node,
+                    index = index,
+                    isLast = index == allNodes.size - 1,
                     accentColor = folder?.color ?: 0xFF6200EE.toInt(),
-                    onClick = {
-                        onEntryClick(
-                            TimelineMoment(
-                                id = node.entryId,
-                                title = node.title,
-                                subtitle = node.subtitle,
-                                folderId = folderId,
-                                folderColor = folder?.color
-                            )
-                        )
-                    }
-                )
-            }
-        }
-
-        if (hasEventTimeline) {
-            item {
-                Text(
-                    text = "Event Timeline",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            items(
-                items = detailedNodes,
-                key = { node -> node.id }
-            ) { node ->
-                FolderTimelineCard(
-                    title = node.title,
-                    subtitle = node.subtitle,
-                    accentColor = folder?.color ?: 0xFF6200EE.toInt(),
+                    formatDate = { viewModel.formatEntryDate(it) },
                     onClick = {
                         onEntryClick(
                             TimelineMoment(

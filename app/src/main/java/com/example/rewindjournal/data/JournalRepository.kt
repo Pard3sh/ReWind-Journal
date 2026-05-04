@@ -247,15 +247,7 @@ class JournalRepository(private val journalDao: JournalDao) {
                                 }
 
                                 val nodes = nodeSnapshot?.documents?.mapNotNull { doc ->
-                                    try {
-                                        doc.toObject(SentimentNode::class.java)?.copy(
-                                            id = doc.id,
-                                            folderId = folderId
-                                        )
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                        null
-                                    }
+                                    doc.toSentimentNode(folderId)
                                 } ?: emptyList()
 
                                 CoroutineScope(Dispatchers.IO).launch {
@@ -284,15 +276,7 @@ class JournalRepository(private val journalDao: JournalDao) {
                                 }
 
                                 val nodes = nodeSnapshot?.documents?.mapNotNull { doc ->
-                                    try {
-                                        doc.toObject(DetailedNode::class.java)?.copy(
-                                            id = doc.id,
-                                            folderId = folderId
-                                        )
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                        null
-                                    }
+                                    doc.toDetailedNode(folderId)
                                 } ?: emptyList()
 
                                 CoroutineScope(Dispatchers.IO).launch {
@@ -378,5 +362,64 @@ fun DocumentSnapshot.getSafeLong(field: String): Long? {
         }
     } catch (e: Exception) {
         null
+    }
+}
+
+fun DocumentSnapshot.toSentimentNode(folderId: String): SentimentNode? {
+    return try {
+        this.toObject(SentimentNode::class.java)?.copy(
+            id = this.id,
+            folderId = folderId
+        )
+    } catch (e: Exception) {
+        try {
+            SentimentNode(
+                id = this.id,
+                folderId = folderId,
+                entryId = getString("entryId") ?: getString("entry_id") ?: "",
+                entryTitle = getString("entryTitle") ?: getString("entry_title") ?: "",
+                generatedTitle = getString("generatedTitle") ?: getString("generated_title") ?: "",
+                timestamp = getSafeLong("timestamp") ?: System.currentTimeMillis(),
+                savedLocation = getString("savedLocation") ?: getString("saved_location") ?: "",
+                sentimentScore = getDouble("sentimentScore")?.toFloat() ?: getDouble("sentiment_score")?.toFloat() ?: 0f,
+                sentimentMagnitude = getDouble("sentimentMagnitude")?.toFloat() ?: getDouble("sentiment_magnitude")?.toFloat() ?: 0f,
+                emotionLabel = getString("emotionLabel") ?: getString("emotion_label") ?: "",
+                extractedLocations = getString("extractedLocations") ?: getString("extracted_locations") ?: "[]",
+                extractedEvents = getString("extractedEvents") ?: getString("extracted_events") ?: "[]",
+                orderIndex = getLong("orderIndex")?.toInt() ?: getLong("order_index")?.toInt() ?: 0
+            )
+        } catch (e2: Exception) {
+            null
+        }
+    }
+}
+
+fun DocumentSnapshot.toDetailedNode(folderId: String): DetailedNode? {
+    return try {
+        this.toObject(DetailedNode::class.java)?.copy(
+            id = this.id,
+            folderId = folderId
+        )
+    } catch (e: Exception) {
+        try {
+            DetailedNode(
+                id = this.id,
+                folderId = folderId,
+                entryId = getString("entryId") ?: getString("entry_id") ?: "",
+                entryTitle = getString("entryTitle") ?: getString("entry_title") ?: "",
+                generatedTitle = getString("generatedTitle") ?: getString("generated_title") ?: "",
+                timestamp = getSafeLong("timestamp") ?: System.currentTimeMillis(),
+                savedLocation = getString("savedLocation") ?: getString("saved_location") ?: "",
+                emotionLabel = getString("emotionLabel") ?: getString("emotion_label") ?: "",
+                sentimentLabel = getString("sentimentLabel") ?: getString("sentiment_label") ?: "",
+                sentimentScore = getDouble("sentimentScore")?.toFloat() ?: getDouble("sentiment_score")?.toFloat() ?: 0f,
+                sentimentMagnitude = getDouble("sentimentMagnitude")?.toFloat() ?: getDouble("sentiment_magnitude")?.toFloat() ?: 0f,
+                extractedLocations = getString("extractedLocations") ?: getString("extracted_locations") ?: "[]",
+                extractedEvents = getString("extractedEvents") ?: getString("extracted_events") ?: "[]",
+                entityRecords = getString("entityRecords") ?: getString("entity_records") ?: "[]"
+            )
+        } catch (e2: Exception) {
+            null
+        }
     }
 }
