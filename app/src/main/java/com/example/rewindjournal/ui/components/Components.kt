@@ -316,7 +316,8 @@ fun EntryComposerCard(
                 placeholder = { Text("Enter Entry Here", fontWeight = FontWeight.Bold) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .heightIn(min= 300.dp),
+//                    .weight(1f),
                 shape = RoundedCornerShape(12.dp),
                 maxLines = Int.MAX_VALUE
             )

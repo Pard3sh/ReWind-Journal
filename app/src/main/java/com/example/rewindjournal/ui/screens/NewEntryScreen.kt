@@ -11,12 +11,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -28,9 +30,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.room.util.TableInfo
 import kotlinx.coroutines.launch
 import com.example.rewindjournal.ui.viewmodel.JournalViewModel
 import com.example.rewindjournal.ui.components.EntryComposerCard
@@ -93,57 +97,60 @@ fun NewEntryScreen(
 
     val folders by viewModel.folders.collectAsState()
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .imePadding()
             .padding(16.dp)
     ) {
-        EntryComposerCard(
-            modifier = Modifier.fillMaxSize(),
-            title = entryTitle,
-            body = entryBody,
-            onTitleChange = { entryTitle = it },
-            onBodyChange = { entryBody = it },
-            folders = folders,
-            selectedFolderId = selectedFolderId,
-            onFolderSelected = { selectedFolderId = it },
-            isEditing = editingEntry != null,
-            onCancelEdit = onCancel,
-            onDeleteClick = if (editingEntry != null) {
-                {
-                    viewModel.deleteEntry(editingEntry.id)
-                    onSaveComplete()
-                }
-            } else null,
-            onSaveClick = {
-                if (entryTitle.isNotBlank() || entryBody.isNotBlank()) {
-                    if (editingEntry != null) {
-                        viewModel.updateEntry(
-                            editingEntry.id,
-                            entryTitle,
-                            entryBody,
-                            selectedFolderId
-                        )
+//        item {
+            EntryComposerCard(
+                modifier = Modifier.fillMaxSize(),
+                title = entryTitle,
+                body = entryBody,
+                onTitleChange = { entryTitle = it },
+                onBodyChange = { entryBody = it },
+                folders = folders,
+                selectedFolderId = selectedFolderId,
+                onFolderSelected = { selectedFolderId = it },
+                isEditing = editingEntry != null,
+                onCancelEdit = onCancel,
+                onDeleteClick = if (editingEntry != null) {
+                    {
+                        viewModel.deleteEntry(editingEntry.id)
                         onSaveComplete()
-                    } else {
-                        saveEntryWithLocation(entryTitle, entryBody, selectedFolderId)
                     }
-                    entryTitle = ""
-                    entryBody = ""
-                    selectedFolderId = null
-                }
-            },
-            onCreateFolder = { name, desc, color ->
-                scope.launch {
-                    val newId = viewModel.addFolder(name, desc, color)
-                    if (newId.isNotEmpty()) {
-                        selectedFolderId = newId
+                } else null,
+                onSaveClick = {
+                    if (entryTitle.isNotBlank() || entryBody.isNotBlank()) {
+                        if (editingEntry != null) {
+                            viewModel.updateEntry(
+                                editingEntry.id,
+                                entryTitle,
+                                entryBody,
+                                selectedFolderId
+                            )
+                            onSaveComplete()
+                        } else {
+                            saveEntryWithLocation(entryTitle, entryBody, selectedFolderId)
+                        }
+                        entryTitle = ""
+                        entryBody = ""
+                        selectedFolderId = null
+                    }
+                },
+                onCreateFolder = { name, desc, color ->
+                    scope.launch {
+                        val newId = viewModel.addFolder(name, desc, color)
+                        if (newId.isNotEmpty()) {
+                            selectedFolderId = newId
+                        }
                     }
                 }
-            }
-        )
-    }
+            )
+        }
+//    }
 }
 
 // more location help 
