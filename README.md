@@ -435,6 +435,8 @@ During development, there was an attempt to run this on **Cloud Run Jobs + Cloud
 **Android data & UI integration**
 
 - Worked heavily on the **database and migration side**:
+  - Designed and implemented the local database schema for journals and folders using Room.
+  - Built and integrated the data layer to Jetpack Compose UI components to support smooth data flow between data and UI.
   - Fixed foreign key errors.
   - Adjusted migration handling to avoid destructive migrations.
   - Pushed changes to entities (adding `userId`, updating schemas to align with auth and backend).
@@ -446,6 +448,9 @@ During development, there was an attempt to run this on **Cloud Run Jobs + Cloud
   - Added a back button and UX improvements to the Timeline screen.
 - Matched UI to **Figma designs**:
   - Updated screens so that the Compose layouts matched the Figma design.
+- Helped resolve version control issues in GitHub when team changes were overwritten or lost.
+- Tested and validated features implemented by other team members to ensure correct functionality.
+- Handled some general polish around the user experience.
 - Added comments and improved README content for the Android repo.
 
 ---
