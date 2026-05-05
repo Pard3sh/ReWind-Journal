@@ -435,6 +435,8 @@ During development, there was an attempt to run this on **Cloud Run Jobs + Cloud
 **Android data & UI integration**
 
 - Worked heavily on the **database and migration side**:
+  - Designed and implemented the local database schema for journals and folders using Room.
+  - Built and integrated the data layer to Jetpack Compose UI components to support smooth data flow between data and UI.
   - Fixed foreign key errors.
   - Adjusted migration handling to avoid destructive migrations.
   - Pushed changes to entities (adding `userId`, updating schemas to align with auth and backend).
@@ -446,6 +448,9 @@ During development, there was an attempt to run this on **Cloud Run Jobs + Cloud
   - Added a back button and UX improvements to the Timeline screen.
 - Matched UI to **Figma designs**:
   - Updated screens so that the Compose layouts matched the Figma design.
+- Helped resolve version control issues in GitHub when team changes were overwritten or lost.
+- Tested and validated features implemented by other team members to ensure correct functionality.
+- Handled some general polish around the user experience.
 - Added comments and improved README content for the Android repo.
 
 ---
@@ -519,8 +524,9 @@ This verifies the full pipeline: app -> Firestore -> backend job -> Firestore ti
   - Provide **template starter code** and boilerplate for Jetpack Compose and Room.
   - Suggest patterns for **ViewModel organization** and modularizing the code.
   - Offer **theme and UI advice**, especially for Material 3.
-  - Assist with debugging, particularly during **Firebase Auth** integration:
+  - Assist with debugging, particularly during **Firebase Auth** integration and display of content returned by AI API:
     - There were issues around SHA‑1 keys and configuration, as the team was not familiar with it, AI was consulted for clarifications and fixes.
+    - There was an issue with the data and we realized that we had to deserialize the data, AI helped us fix this issue. 
 
 The team deliberately rejected AI suggestions that strayed from scope, such as:
 
@@ -578,6 +584,7 @@ Across the ReWind project, AI accelerated:
   - Firebase Auth SHA‑1 issues.
   - Python packaging/import issues.
   - Firestore query issues.
+  - Deserializing.
 - **Documentation**:
   - Sections of READMEs and comments
   - Example outputs
