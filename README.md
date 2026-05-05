@@ -13,7 +13,7 @@ The key reason for the split is so that **heavy ML and NLP work is offloaded to 
 
 ## 2. Android Architecture
 
-##### MVVM
+### MVVM
 
 ReWind follows an MVVM-style architecture on the Android side.
 
