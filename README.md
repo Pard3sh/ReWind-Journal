@@ -524,7 +524,7 @@ This verifies the full pipeline: app -> Firestore -> backend job -> Firestore ti
 
 The team deliberately rejected AI suggestions that strayed from scope, such as:
 
-- **Journaling streaks**, gamification, and other non-essential features. Also several unecessary
+- Journaling streaks, gamification, and other non-essential features. Also several unecessary statistical displays such as # of new entries, or # of 'active' folders
 - Noisy UI flows or extra screens that would clutter the experience and distract from the core goal (journal -> timeline).
 
 **Backend**
