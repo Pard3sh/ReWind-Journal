@@ -57,4 +57,9 @@ class AuthViewModel : ViewModel() {
                 }
             }
     }
+
+    fun signOut() {
+        FirebaseAuth.getInstance().signOut()
+        isLoggedIn.value = false
+    }
 }

@@ -95,7 +95,7 @@ fun RootScreen(
         when (state) {
             "loading" -> LoadingScreen()
 
-            "home" -> RewindJournalApp(journalViewModel)
+            "home" -> RewindJournalApp(journalViewModel, authViewModel)
 
             "login" -> SplashLoginScreen(
                 onSignInClick = {

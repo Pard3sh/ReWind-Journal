@@ -122,15 +122,15 @@ fun TimelineScreen(
             }
         }
 
-        folder?.let {
-            if (folderHasStats(it)) {
-                item {
-                    Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                        TimelineStatsCard(folder = it)
-                    }
-                }
-            }
-        }
+//        folder?.let {
+//            if (folderHasStats(it)) {
+//                item {
+//                    Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+//                        TimelineStatsCard(folder = it)
+//                    }
+//                }
+//            }
+//        }
 
         if (allNodes.isNotEmpty()) {
             item {

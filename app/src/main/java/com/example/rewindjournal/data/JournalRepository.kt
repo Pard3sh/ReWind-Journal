@@ -41,8 +41,8 @@ class JournalRepository(private val journalDao: JournalDao) {
     fun getDetailedNodesByFolder(folderId: String): Flow<List<DetailedNode>> =
         journalDao.getDetailedNodesByFolder(folderId)
 
-    suspend fun insertFolder(folder: Folder) {
-        val uid = auth.currentUser?.uid ?: return
+    suspend fun insertFolder(folder: Folder): String {
+        val uid = auth.currentUser?.uid ?: return ""
         val docRef = db.collection("users")
             .document(uid)
             .collection("folders")
@@ -52,6 +52,7 @@ class JournalRepository(private val journalDao: JournalDao) {
 
         journalDao.insertFolder(folderWithId)
         docRef.set(folderWithId)
+        return docRef.id
     }
 
     suspend fun insertEntry(entry: JournalEntry) {

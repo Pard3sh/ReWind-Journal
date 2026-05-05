@@ -208,17 +208,15 @@ class JournalViewModel(private val repository: JournalRepository) : ViewModel() 
         }
     }
 
-    fun addFolder(name: String, description: String, color: Int) {
-        viewModelScope.launch {
-            repository.insertFolder(
-                Folder(
-                    userId = userId,
-                    name = name,
-                    description = description,
-                    color = color
-                )
+    suspend fun addFolder(name: String, description: String, color: Int): String {
+        return repository.insertFolder(
+            Folder(
+                userId = userId,
+                name = name,
+                description = description,
+                color = color
             )
-        }
+        )
     }
 
     fun updateFolder(id: String, name: String, description: String, color: Int) {

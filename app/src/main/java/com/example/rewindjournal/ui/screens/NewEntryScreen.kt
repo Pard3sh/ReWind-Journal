@@ -17,12 +17,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.launch
 import com.example.rewindjournal.ui.viewmodel.JournalViewModel
 import com.example.rewindjournal.ui.components.EntryComposerCard
 import com.example.rewindjournal.ui.viewmodel.TimelineMoment
@@ -46,6 +48,7 @@ fun NewEntryScreen(
     var selectedFolderId by rememberSaveable { mutableStateOf<String?>(editingEntry?.folderId ?: initialFolderId) }
     var pendingEntrySave by remember { mutableStateOf<PendingEntrySave?>(null) }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     // request location from user
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -118,6 +121,14 @@ fun NewEntryScreen(
                     entryTitle = ""
                     entryBody = ""
                     selectedFolderId = null
+                }
+            },
+            onCreateFolder = { name, desc, color ->
+                scope.launch {
+                    val newId = viewModel.addFolder(name, desc, color)
+                    if (newId.isNotEmpty()) {
+                        selectedFolderId = newId
+                    }
                 }
             }
         )

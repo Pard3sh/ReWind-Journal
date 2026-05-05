@@ -3,6 +3,7 @@ package com.example.rewindjournal.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,10 +26,19 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rewindjournal.data.Folder
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.toArgb
 import com.example.rewindjournal.ui.viewmodel.AffirmationViewModel
 import com.example.rewindjournal.ui.viewmodel.FolderSummary
 import com.example.rewindjournal.ui.viewmodel.FolderTimelineNode
 import com.example.rewindjournal.ui.viewmodel.TimelineMoment
+
+data class MoodTrendData(
+    val label: String,
+    val count: Int,
+    val color: Color,
+    val emoji: String
+)
 
 @Composable
 fun AffirmationCard(affirmation: String) {
@@ -123,11 +133,24 @@ fun EntryComposerCard(
     onFolderSelected: (String?) -> Unit = {},
     isEditing: Boolean = false,
     onCancelEdit: () -> Unit = {},
-    onDeleteClick: (() -> Unit)? = null
+    onDeleteClick: (() -> Unit)? = null,
+    onCreateFolder: (String, String, Int) -> Unit = { _, _, _ -> }
 ) {
     var showFolderPicker by remember { mutableStateOf(false) }
+    var showNewFolderDialog by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     val generalFolderId = "general"
+    val currentFolderName = folders.find { it.id == (selectedFolderId ?: generalFolderId) }?.name ?: "Assign Folder"
+
+    if (showNewFolderDialog) {
+        FolderDialog(
+            onDismiss = { showNewFolderDialog = false },
+            onConfirm = { name, desc, color ->
+                onCreateFolder(name, desc, color)
+                showNewFolderDialog = false
+            }
+        )
+    }
 
     if (showFolderPicker) {
         ModalBottomSheet(
@@ -139,12 +162,25 @@ fun EntryComposerCard(
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp, vertical = 8.dp)
             ) {
-                Text(
-                    text = "Select Folder",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Select Folder",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    TextButton(onClick = {
+                        showNewFolderDialog = true
+                    }) {
+                        Icon(Icons.Default.CreateNewFolder, null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("New Folder")
+                    }
+                }
 
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
@@ -307,7 +343,7 @@ fun EntryComposerCard(
                 ) {
                     Icon(Icons.Default.BookmarkBorder, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Assign Folder", maxLines = 1)
+                    Text(currentFolderName, maxLines = 1)
                 }
             }
 
@@ -732,7 +768,129 @@ fun MoodTrendCard(nodes: List<FolderTimelineNode>) {
     }
 }
 
-private data class MoodTrendData(val label: String, val count: Int, val color: Color, val emoji: String)
+@Composable
+fun FolderDialog(
+    initialName: String = "",
+    initialDescription: String = "",
+    initialColor: Color = Color(0xFF4E378B),
+    isEditing: Boolean = false,
+    onDismiss: () -> Unit,
+    onConfirm: (String, String, Int) -> Unit,
+    onDelete: (() -> Unit)? = null
+) {
+    var name by remember { mutableStateOf(initialName) }
+    var description by remember { mutableStateOf(initialDescription) }
+    val maxNameLength = 25
+
+    val colors = listOf(
+        Color(0xFF4E378B), // Dark Purple
+        Color(0xFFE91E63), // Pink
+        Color(0xFF2196F3), // Blue
+        Color(0xFF4CAF50), // Green
+        Color(0xFFFFC107), // Amber
+        Color(0xFFFF5722)  // Deep Orange
+    )
+    var selectedColor by remember { mutableStateOf(initialColor) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                if (isEditing) "Edit Folder" else "New Folder",
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { if (it.length <= maxNameLength) name = it },
+                    label = { Text("Folder Name") },
+                    supportingText = {
+                        Text(
+                            text = "${name.length} / $maxNameLength",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.End,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.primary,
+                    ),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.primary,
+                    )
+                )
+
+                Column {
+                    Text(
+                        "Select Color",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        colors.forEach { color ->
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(color, CircleShape)
+                                    .border(
+                                        width = if (selectedColor == color) 3.dp else 0.dp,
+                                        color = if (selectedColor == color) MaterialTheme.colorScheme.outline else Color.Transparent,
+                                        shape = CircleShape
+                                    )
+                                    .clickable { selectedColor = color }
+                            )
+                        }
+                    }
+                }
+
+                if (isEditing && onDelete != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(
+                        onClick = onDelete,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Delete, null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Delete Folder")
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { if (name.isNotBlank()) onConfirm(name, description, selectedColor.toArgb()) },
+                enabled = name.isNotBlank(),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Text(if (isEditing) "Update" else "Create")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
 
 @Composable
 fun StraightTimelineMoment(

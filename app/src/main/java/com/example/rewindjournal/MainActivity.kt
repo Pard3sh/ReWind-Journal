@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -56,7 +57,10 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RewindJournalApp(viewModel: JournalViewModel) {
+fun RewindJournalApp(
+    viewModel: JournalViewModel,
+    authViewModel: AuthViewModel
+) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     var editingEntryId by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedTimelineFolderId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -87,23 +91,54 @@ fun RewindJournalApp(viewModel: JournalViewModel) {
                 actions = {
                     val user = FirebaseAuth.getInstance().currentUser
                     val photoUrl = user?.photoUrl?.toString()
+                    var showLogoutDialog by remember { mutableStateOf(false) }
 
-                    if (photoUrl != null) {
-                        AsyncImage(
-                            model = photoUrl,
-                            contentDescription = "Profile",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .padding(end = 16.dp)
-                                .size(36.dp)
-                                .clip(CircleShape)
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profile",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(end = 16.dp)
+                    IconButton(onClick = { showLogoutDialog = true }) {
+                        if (photoUrl != null) {
+                            AsyncImage(
+                                model = photoUrl,
+                                contentDescription = "Profile",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                    .padding(2.dp)
+                                    .clip(CircleShape)
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "Profile",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    if (showLogoutDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showLogoutDialog = false },
+                            title = { Text("Logout") },
+                            text = { Text("Are you sure you want to logout?") },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    showLogoutDialog = false
+                                    authViewModel.signOut()
+                                }) {
+                                    Text("Logout")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showLogoutDialog = false }) {
+                                    Text("Cancel")
+                                }
+                            }
                         )
                     }
                 }
