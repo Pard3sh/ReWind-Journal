@@ -17,11 +17,11 @@ The key reason for the split is so that **heavy ML and NLP work is offloaded to 
 
 ReWind follows an MVVM-style architecture on the Android side.
 
-###### Model
+**Model**
 
 The Model layer includes the Room database entities and the repository abstraction.
 
-###### ViewModel
+**ViewModel**
 
 The ViewModel layer is defined by `JournalViewModel.kt`. This  holds the state of the UI and coordinates between the repository and Compose screens.
 
@@ -34,7 +34,7 @@ In ReWind, the `JournalViewModel` is responsible for:
 - Handling user actions such as CRUD on entries and folders
 - Preparing data before it reaches the UI with helper functions
 
-###### View
+**View**
 
 The View is the Jetpack Compose UI. It describes how the application is composed and how the state is rendered.
 
@@ -42,7 +42,7 @@ The UI is split into screens.
 
 Reusable UI elements are separated into shared components, such as the search bar and other common pieces in `Components.kt`.
 
-##### Unidirectional Data Flow
+**Unidirectional Data Flow**
 
 <img width="658" height="628" alt="image" src="https://github.com/user-attachments/assets/c77c7889-551a-431b-b0db-ed11b6e24e05" />
 
