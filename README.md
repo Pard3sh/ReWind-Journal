@@ -386,7 +386,7 @@ During development, there was an attempt to run this on **Cloud Run Jobs + Cloud
   - Quality-of-life improvements (search, editing/deletion, better UX flows).
 - Implemented and later refactored the **ViewModel architecture**:
   - Reorganized project structure for separation of data and UI.
-- Extended the **folder schema** for AI/ML insights
+- Extended the **folder schema** for AI/ML insights and added the timeline schemas to Room
 - Implemented **location capture** for entries:
   - Added location permissions to the app.
 - Built the base **timeline UI**:
