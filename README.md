@@ -524,8 +524,9 @@ This verifies the full pipeline: app -> Firestore -> backend job -> Firestore ti
   - Provide **template starter code** and boilerplate for Jetpack Compose and Room.
   - Suggest patterns for **ViewModel organization** and modularizing the code.
   - Offer **theme and UI advice**, especially for Material 3.
-  - Assist with debugging, particularly during **Firebase Auth** integration:
+  - Assist with debugging, particularly during **Firebase Auth** integration and display of content returned by AI API:
     - There were issues around SHA‑1 keys and configuration, as the team was not familiar with it, AI was consulted for clarifications and fixes.
+    - There was an issue with the data and we realized that we had to deserialize the data, AI helped us fix this issue. 
 
 The team deliberately rejected AI suggestions that strayed from scope, such as:
 
@@ -583,6 +584,7 @@ Across the ReWind project, AI accelerated:
   - Firebase Auth SHA‑1 issues.
   - Python packaging/import issues.
   - Firestore query issues.
+  - Deserializing.
 - **Documentation**:
   - Sections of READMEs and comments
   - Example outputs
