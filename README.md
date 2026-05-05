@@ -13,31 +13,6 @@ The key reason for the split is so that **heavy ML and NLP work is offloaded to 
 
 ## 2. Android Architecture
 
-### 2.1 Local–Cloud Data 
-
-All “core” journaling data is persisted locally via **Room**, and then synced with **Firestore**, with **timeline data as the only exception**:
-
-- **Users**, using their Google/FireAuth accounts, must be logged in so the application ensures that all the following data is tied to a user
-- **Folders** and **JournalEntries**:
-  - Always stored in Room first.
-  - Synced to the cloud so that the backend job can analyze them.
-- **Timeline data** (sentiment/detailed nodes, folder summary, emotion counts):
-  - Generated on the backend, written into Firestore.
-  - Then synced into Room and exposed to the UI.
-  - Timeline nodes are eventually stored locally as well, but the phone never computes them.
-
-This architecture lets the app:
-
-- Allows for data persistence across devices with the same account and prevents data loss from losing a device
-- Avoid doing heavy ML/NLP on device.
-- Allow the backend to be improved independently (better models, better summaries) without changing the app’s schema, unless absolutely necessary
-
-#### Related Android Architecture Diagrams and Notes
-
-##### Unidirectional Data Flow
-
-<img width="658" height="628" alt="image" src="https://github.com/user-attachments/assets/c77c7889-551a-431b-b0db-ed11b6e24e05" />
-
 ##### MVVM
 
 ReWind follows an MVVM-style architecture on the Android side.
@@ -66,6 +41,31 @@ The View is the Jetpack Compose UI. It describes how the application is composed
 The UI is split into screens.
 
 Reusable UI elements are separated into shared components, such as the search bar and other common pieces in `Components.kt`.
+
+##### Unidirectional Data Flow
+
+<img width="658" height="628" alt="image" src="https://github.com/user-attachments/assets/c77c7889-551a-431b-b0db-ed11b6e24e05" />
+
+
+### 2.1 Local–Cloud Data 
+
+All “core” journaling data is persisted locally via **Room**, and then synced with **Firestore**, with **timeline data as the only exception**:
+
+- **Users**, using their Google/FireAuth accounts, must be logged in so the application ensures that all the following data is tied to a user
+- **Folders** and **JournalEntries**:
+  - Always stored in Room first.
+  - Synced to the cloud so that the backend job can analyze them.
+- **Timeline data** (sentiment/detailed nodes, folder summary, emotion counts):
+  - Generated on the backend, written into Firestore.
+  - Then synced into Room and exposed to the UI.
+  - Timeline nodes are eventually stored locally as well, but the phone never computes them.
+
+This architecture lets the app:
+
+- Allows for data persistence across devices with the same account and prevents data loss from losing a device
+- Avoid doing heavy ML/NLP on device.
+- Allow the backend to be improved independently (better models, better summaries) without changing the app’s schema, unless absolutely necessary
+
 
 ### 2.2 Room Entities and Schema
 
