@@ -677,45 +677,35 @@ fun MoodTrendCard(nodes: List<FolderTimelineNode>) {
     // Count each entry only once for the mood trend statistics
     val uniqueEntries = nodes.distinctBy { it.entryId }
     
-    var happyCount = 0
-    var neutralCount = 0
-    var sadCount = 0
-    var angryCount = 0
+    var joyCount = 0
+    var sadnessCount = 0
+    var angerCount = 0
+    var fearCount = 0
+    var loveCount = 0
+    var surpriseCount = 0
 
     uniqueEntries.forEach { node ->
         val label = (if (node.emotionLabel.isNotBlank()) node.emotionLabel else node.sentimentLabel).trim().lowercase()
         when {
-            // Happy / Positive category
-            label.contains("happy") || label.contains("joy") || label.contains("positiv") || 
-            label.contains("excit") || label.contains("grate") || label.contains("love") || 
-            label.contains("content") || label.contains("cheer") || label.contains("satisf") ||
-            label.contains("wonder") || label.contains("great") || label.contains("awesome") -> happyCount++
-
-            // Angry / Very Negative category
-            label.contains("ang") || label.contains("frustrat") || label.contains("annoy") || 
-            label.contains("irritat") || label.contains("very negative") || label.contains("disgust") ||
-            label.contains("mad") || label.contains("outrage") || label.contains("furi") -> angryCount++
-
-            // Sad / Negative category
-            label.contains("sad") || label.contains("negativ") || label.contains("lonely") || 
-            label.contains("hurt") || label.contains("fear") || label.contains("anxious") || 
-            label.contains("gloomy") || label.contains("depress") || label.contains("sorrow") ||
-            label.contains("worr") -> sadCount++
-
-            // Default to Neutral
-            else -> neutralCount++
+            label.contains("love") || label.contains("affection") || label.contains("ador") || label.contains("cherish") -> loveCount++
+            label.contains("joy") || label.contains("happy") || label.contains("content") || label.contains("cheer") || label.contains("grate") || label.contains("excit") || label.contains("wonder") || label.contains("great") || label.contains("awesome") -> joyCount++
+            label.contains("surprise") || label.contains("amazed") || label.contains("shock") || label.contains("astonish") || label.contains("stun") -> surpriseCount++
+            label.contains("ang") || label.contains("frustrat") || label.contains("annoy") || label.contains("mad") || label.contains("outrage") || label.contains("furi") || label.contains("irritat") || label.contains("disgust") -> angerCount++
+            label.contains("fear") || label.contains("anxious") || label.contains("worr") || label.contains("panic") || label.contains("nervous") || label.contains("scared") || label.contains("terrifi") -> fearCount++
+            label.contains("sad") || label.contains("depress") || label.contains("lonely") || label.contains("hurt") || label.contains("negativ") || label.contains("gloomy") || label.contains("sorrow") -> sadnessCount++
         }
     }
 
-    val total = uniqueEntries.size
     val moods = listOf(
-        MoodTrendData(label = "Happy", count = happyCount, color = Color(0xFFFFD54F), emoji = "😁"), // Amber
-        MoodTrendData(label = "Neutral", count = neutralCount, color = Color(0xFFB0BEC5), emoji = "😌"), // Blue Gray
-        MoodTrendData(label = "Sadness", count = sadCount, color = Color(0xFF64B5F6), emoji = "😔"), // Blue
-        MoodTrendData(label = "Anger", count = angryCount, color = Color(0xFFE57373), emoji = "😡") // Red
+        MoodTrendData("Joy", joyCount, Color(0xFFFFD54F), "😊"),
+        MoodTrendData("Love", loveCount, Color(0xFFF06292), "😍"),
+        MoodTrendData("Surprise", surpriseCount, Color(0xFFBA68C8), "😲"),
+        MoodTrendData("Fear", fearCount, Color(0xFF4DB6AC), "😨"),
+        MoodTrendData("Sadness", sadnessCount, Color(0xFF64B5F6), "😔"),
+        MoodTrendData("Anger", angerCount, Color(0xFFE57373), "😡")
     )
 
-    val maxEntries = moods.maxOf { it.count }.coerceAtLeast(1)
+    val maxCount = moods.maxOf { it.count }.coerceAtLeast(1)
 
     Card(
         shape = RoundedCornerShape(32.dp),
@@ -725,42 +715,50 @@ fun MoodTrendCard(nodes: List<FolderTimelineNode>) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
+            Text(
+                text = "Mood Distribution",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.DarkGray
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            
             moods.forEach { mood ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 10.dp),
+                        .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "${mood.count} ${if (mood.count == 1) "entry" else "entries"}",
-                        modifier = Modifier.width(85.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.DarkGray
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(8.dp)
-                            .background(Color.White.copy(alpha = 0.6f), CircleShape)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(if (total > 0) mood.count.toFloat() / maxEntries else 0f)
-                                .height(8.dp)
-                                .background(mood.color, CircleShape)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
                     Text(text = mood.emoji, style = MaterialTheme.typography.bodyLarge)
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = mood.label,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.labelSmall,
                         color = Color.DarkGray,
-                        modifier = Modifier.width(65.dp)
+                        modifier = Modifier.width(60.dp)
+                    )
+                    
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(10.dp)
+                            .background(Color.White.copy(alpha = 0.5f), CircleShape)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(if (maxCount > 0) mood.count.toFloat() / maxCount else 0.01f)
+                                .height(10.dp)
+                                .background(mood.color, CircleShape)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = mood.count.toString(),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray
                     )
                 }
             }

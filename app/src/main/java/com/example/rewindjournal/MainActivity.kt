@@ -199,7 +199,8 @@ fun RewindJournalApp(
                             TimelineScreen(
                                 folderId = selectedTimelineFolderId!!,
                                 viewModel = viewModel,
-                                onEntryClick = { editingEntryId = it.id }
+                                onEntryClick = { editingEntryId = it.id },
+                                onBack = { selectedTimelineFolderId = null }
                             )
                             BackHandler { selectedTimelineFolderId = null }
                         } else {
