@@ -44,8 +44,7 @@ fun HomeScreen(viewModel: JournalViewModel, onEntryClick: (TimelineMoment) -> Un
 
         item {
             Text(
-//                change name to match user
-                text = "Welcome back, Angel!",
+                text = "Welcome back, ready to reflect?",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground

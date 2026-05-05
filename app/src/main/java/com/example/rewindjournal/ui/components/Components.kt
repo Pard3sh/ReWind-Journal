@@ -9,17 +9,21 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextDecoration
@@ -28,6 +32,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rewindjournal.data.Folder
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.sp
 import com.example.rewindjournal.ui.viewmodel.AffirmationViewModel
 import com.example.rewindjournal.ui.viewmodel.FolderSummary
 import com.example.rewindjournal.ui.viewmodel.FolderTimelineNode
@@ -123,6 +132,7 @@ fun SearchBar(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EntryComposerCard(
+    modifier: Modifier = Modifier,
     title: String,
     body: String,
     onTitleChange: (String) -> Unit,
@@ -238,13 +248,18 @@ fun EntryComposerCard(
     }
 
     Card(
+        modifier = modifier.fillMaxSize(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp)
+        ){
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -301,15 +316,9 @@ fun EntryComposerCard(
                 placeholder = { Text("Enter Entry Here", fontWeight = FontWeight.Bold) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp),
+                    .weight(1f),
                 shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.primary
-                ),
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences
-                )
+                maxLines = Int.MAX_VALUE
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -544,103 +553,97 @@ fun TimelineInsightChip(text: String) {
 
 @Composable
 fun TimelineInsightsCard(
-    folderName: String,
-    summaryText: String,
-    sentimentTrend: String,
-    topEvents: List<String>,
+    summaryText: String?,
+    sentimentTrend: String?,
     topLocations: List<String>,
     startTimestamp: Long?,
     endTimestamp: Long?,
     formatDate: (Long) -> String
 ) {
-    val hasDateRange = startTimestamp != null && endTimestamp != null
-    val hasEvents = topEvents.isNotEmpty()
-    val hasLocations = topLocations.isNotEmpty()
-    val hasSummary = summaryText.isNotBlank()
-    val hasTrend = sentimentTrend.isNotBlank()
 
     Card(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
+            containerColor = MaterialTheme.colorScheme.primaryContainer
         )
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+
+
             Text(
                 text = "Insights",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
+                style = MaterialTheme.typography.titleLarge
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = folderName,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
 
-            if (hasDateRange) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = "${formatDate(startTimestamp!!)} → ${formatDate(endTimestamp!!)}",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
+            Label("Date Range")
+            if (startTimestamp != null && endTimestamp != null) {
+                Text("${formatDate(startTimestamp)} → ${formatDate(endTimestamp)}")
             }
 
-            if (hasTrend) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = "Mood trend: $sentimentTrend",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            }
+            Spacer(modifier = Modifier.height(12.dp))
 
-            if (hasEvents) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Top events",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(topEvents.take(5)) { item ->
-                        TimelineInsightChip(text = item)
-                    }
+            Label("Trend")
+            TrendChip(sentimentTrend)
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+
+            if (topLocations.isNotEmpty()) {
+                Label("Top Location")
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("📍")
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        topLocations.first().replaceFirstChar { it.uppercase() }
+                    )
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            if (hasLocations) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Top locations",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(topLocations.take(5)) { item ->
-                        TimelineInsightChip(text = item)
-                    }
-                }
-            }
 
-            if (hasSummary) {
-                Spacer(modifier = Modifier.height(16.dp))
+            if (!summaryText.isNullOrBlank()) {
+                Label("Summary")
                 Text(
                     text = summaryText,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
+    }
+}
+
+@Composable
+fun Label(text: String) {
+    Text(
+        text = text.uppercase(),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
+@Composable
+fun TrendChip(trend: String?) {
+
+    val (color, label) = when (trend?.lowercase()) {
+        "declining" -> Color(0xFFE57373) to "Declining"
+        "improving" -> Color(0xFF81C784) to "Improving"
+        else -> Color(0xFFB0BEC5) to (trend ?: "Stable")
+    }
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = color.copy(alpha = 0.2f)
+    ) {
+        Text(
+            text = label,
+            color = color,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+        )
     }
 }
 
@@ -716,7 +719,7 @@ fun MoodTrendCard(nodes: List<FolderTimelineNode>) {
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Text(
-                text = "Mood Distribution",
+                text = "Mood Distribution Analytics",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = Color.DarkGray
@@ -730,7 +733,7 @@ fun MoodTrendCard(nodes: List<FolderTimelineNode>) {
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = mood.emoji, style = MaterialTheme.typography.bodyLarge)
+                    Text(text = mood.emoji, style = TextStyle(fontSize = 28.sp))
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = mood.label,
@@ -945,10 +948,22 @@ fun StraightTimelineMoment(
                 .padding(bottom = 24.dp)
                 .weight(1f)
         ) {
+            val titleColor = Color(0xFF4527A0)
             Text(
                 text = node.title,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFF4527A0)
+                color = titleColor,
+                modifier = Modifier.drawBehind {
+                    val strokeWidth = 1.dp.toPx()
+                    val y = size.height
+                    drawLine(
+                        color = titleColor.copy(alpha = 0.4f),
+                        start = Offset(0f, y),
+                        end = Offset(size.width, y),
+                        strokeWidth = strokeWidth,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f), 0f)
+                    )
+                }
             )
             
             Spacer(modifier = Modifier.height(2.dp))
@@ -999,6 +1014,8 @@ fun MoodGraphCard(nodes: List<FolderTimelineNode>) {
     val sorted = remember(nodes) {
         nodes.sortedBy { it.timestamp }
     }
+    
+    val textMeasurer = rememberTextMeasurer()
 
     Card(
         shape = RoundedCornerShape(32.dp),
@@ -1007,98 +1024,111 @@ fun MoodGraphCard(nodes: List<FolderTimelineNode>) {
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .height(180.dp)
+            .height(220.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp, vertical = 16.dp)
-        ) {
-            val lineColor = MaterialTheme.colorScheme.primary
-            val gridColor = Color(0xFFD8CDEB)
-
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val w = size.width
-                val h = size.height
-
-                if (sorted.isEmpty()) return@Canvas
-
-                // Three horizontal guide lines (top / middle / bottom)
-                val topY = h * 0.2f
-                val midY = h * 0.5f
-                val botY = h * 0.8f
-
-                drawLine(
-                    color = gridColor,
-                    start = Offset(0f, topY),
-                    end = Offset(w, topY),
-                    alpha = 0.5f
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Sentiment Over Time",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
-                drawLine(
-                    color = gridColor,
-                    start = Offset(0f, midY),
-                    end = Offset(w, midY),
-                    alpha = 0.5f
-                )
-                drawLine(
-                    color = gridColor,
-                    start = Offset(0f, botY),
-                    end = Offset(w, botY),
-                    alpha = 0.5f
-                )
-
-                // Map sentimentScore ([-1,1]) to Y between topY and botY
-                fun scoreToY(score: Float): Float {
-                    val clamped = score.coerceIn(-1f, 1f)
-                    val t = (1f - (clamped + 1f) / 2f) // +1→0, -1→1
-                    return topY + (botY - topY) * t
-                }
-
-                val count = sorted.size
-                val stepX = if (count > 1) w / (count - 1) else 0f
-
-                val points = sorted.mapIndexed { index, node ->
-                    val x = if (count == 1) w / 2f else stepX * index
-                    val y = scoreToY(node.sentimentScore)
-                    Offset(x, y)
-                }
-
-                // Faint shadow line
-                for (i in 0 until points.lastIndex) {
-                    val p1 = points[i]
-                    val p2 = points[i + 1]
-                    drawLine(
-                        color = lineColor.copy(alpha = 0.25f),
-                        start = p1,
-                        end = p2,
-                        strokeWidth = 6f
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(8.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Emotion Flow",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
 
-                // Main line
-                for (i in 0 until points.lastIndex) {
-                    val p1 = points[i]
-                    val p2 = points[i + 1]
-                    drawLine(
-                        color = lineColor,
-                        start = p1,
-                        end = p2,
-                        strokeWidth = 4f
-                    )
-                }
+            Spacer(modifier = Modifier.height(12.dp))
 
-                // Points
-                points.forEach { p ->
-                    drawCircle(
-                        color = Color.White,
-                        radius = 7f,
-                        center = p
-                    )
-                    drawCircle(
-                        color = lineColor,
-                        radius = 4f,
-                        center = p
-                    )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                val lineColor = MaterialTheme.colorScheme.primary
+                val gridColor = Color(0xFFD8CDEB)
+
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val w = size.width
+                    val h = size.height
+
+                    if (sorted.isEmpty()) return@Canvas
+
+                    // Labels for sentiment
+                    // Positive (top), Neutral (middle), Negative (bottom)
+                    val topY = h * 0.15f
+                    val midY = h * 0.5f
+                    val botY = h * 0.85f
+
+                    // Grid lines
+                    drawLine(color = gridColor, start = Offset(0f, topY), end = Offset(w, topY), alpha = 0.3f)
+                    drawLine(color = gridColor, start = Offset(0f, midY), end = Offset(w, midY), alpha = 0.6f)
+                    drawLine(color = gridColor, start = Offset(0f, botY), end = Offset(w, botY), alpha = 0.3f)
+
+                    // Map sentimentScore ([-1,1]) to Y
+                    fun scoreToY(score: Float): Float {
+                        val clamped = score.coerceIn(-1f, 1f)
+                        val t = (1f - (clamped + 1f) / 2f)
+                        return topY + (botY - topY) * t
+                    }
+
+                    val count = sorted.size
+                    val stepX = if (count > 1) w / (count - 1) else 0f
+
+                    val points = sorted.mapIndexed { index, node ->
+                        val x = if (count == 1) w / 2f else stepX * index
+                        val y = scoreToY(node.sentimentScore)
+                        Offset(x, y)
+                    }
+
+                    // Draw path
+                    if (points.size > 1) {
+                        for (i in 0 until points.lastIndex) {
+                            drawLine(
+                                color = lineColor,
+                                start = points[i],
+                                end = points[i+1],
+                                strokeWidth = 5f
+                            )
+                        }
+                    }
+
+                    // Points with emojis
+                    points.forEachIndexed { index, p ->
+                        val node = sorted[index]
+                        val emoji = when {
+                            node.sentimentScore > 0.5f -> "😊"
+                            node.sentimentScore > 0f -> "🙂"
+                            node.sentimentScore == 0f -> "😐"
+                            node.sentimentScore > -0.5f -> "😕"
+                            else -> "😡"
+                        }
+                        
+                        val textLayoutResult = textMeasurer.measure(
+                            text = AnnotatedString(emoji),
+                            style = TextStyle(fontSize = 20.sp)
+                        )
+                        
+                        drawCircle(color = Color.White, radius = 12f, center = p)
+                        
+                        drawText(
+                            textLayoutResult = textLayoutResult,
+                            topLeft = Offset(
+                                x = p.x - textLayoutResult.size.width / 2f,
+                                y = p.y - textLayoutResult.size.height / 2f
+                            )
+                        )
+                    }
                 }
             }
         }

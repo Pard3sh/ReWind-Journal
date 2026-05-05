@@ -7,11 +7,18 @@ import android.location.Location
 import android.location.LocationManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -86,14 +93,14 @@ fun NewEntryScreen(
 
     val folders by viewModel.folders.collectAsState()
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
+            .imePadding()
             .padding(16.dp)
     ) {
-        Spacer(modifier = Modifier.height(8.dp))
-        
         EntryComposerCard(
+            modifier = Modifier.fillMaxSize(),
             title = entryTitle,
             body = entryBody,
             onTitleChange = { entryTitle = it },
@@ -104,7 +111,6 @@ fun NewEntryScreen(
             isEditing = editingEntry != null,
             onCancelEdit = onCancel,
             onDeleteClick = if (editingEntry != null) {
-
                 {
                     viewModel.deleteEntry(editingEntry.id)
                     onSaveComplete()
@@ -113,7 +119,12 @@ fun NewEntryScreen(
             onSaveClick = {
                 if (entryTitle.isNotBlank() || entryBody.isNotBlank()) {
                     if (editingEntry != null) {
-                        viewModel.updateEntry(editingEntry.id, entryTitle, entryBody, selectedFolderId)
+                        viewModel.updateEntry(
+                            editingEntry.id,
+                            entryTitle,
+                            entryBody,
+                            selectedFolderId
+                        )
                         onSaveComplete()
                     } else {
                         saveEntryWithLocation(entryTitle, entryBody, selectedFolderId)

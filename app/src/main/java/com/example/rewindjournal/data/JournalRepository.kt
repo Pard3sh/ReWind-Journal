@@ -35,7 +35,7 @@ class JournalRepository(private val journalDao: JournalDao) {
     fun getEntriesByFolder(folderId: String, userId: String): Flow<List<JournalEntry>> =
         journalDao.getEntriesByFolder(folderId, userId)
 
-    fun getSentimentNodesByFolder(folderId: String): Flow<List<SentimentNode>> =
+fun getSentimentNodesByFolder(folderId: String): Flow<List<SentimentNode>> =
         journalDao.getSentimentNodesByFolder(folderId)
 
     fun getDetailedNodesByFolder(folderId: String): Flow<List<DetailedNode>> =

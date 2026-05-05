@@ -14,6 +14,9 @@ import com.example.rewindjournal.data.Folder
 import com.example.rewindjournal.ui.components.*
 import com.example.rewindjournal.ui.viewmodel.JournalViewModel
 import com.example.rewindjournal.ui.viewmodel.TimelineMoment
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
+
 
 @Composable
 fun TimelineScreen(
@@ -92,12 +95,11 @@ fun TimelineScreen(
 
         folder?.let { f ->
             item {
+                Spacer(modifier = Modifier.height(6.dp))
                 Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                     TimelineInsightsCard(
-                        folderName = f.name,
                         summaryText = f.summaryText,
                         sentimentTrend = f.sentimentTrend,
-                        topEvents = topEvents,
                         topLocations = topLocations,
                         startTimestamp = f.startTimestamp,
                         endTimestamp = f.endTimestamp,
@@ -110,22 +112,22 @@ fun TimelineScreen(
                     Column(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp)
                     ) {
-                        Text(
-                            text = "Mood Analytics",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
+//                        Text(
+//                            text = "Mood Analytics",
+//                            style = MaterialTheme.typography.titleLarge,
+//                            modifier = Modifier.padding(bottom = 16.dp)
+//                        )
 
                         MoodTrendCard(nodes = allNodes)
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        Text(
-                            text = "Sentiment Over Time",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
+//                        Text(
+//                            text = "Sentiment Over Time",
+//                            style = MaterialTheme.typography.titleLarge,
+//                            modifier = Modifier.padding(bottom = 16.dp)
+//                        )
+
                         MoodGraphCard(nodes = allNodes)
                     }
                 }
