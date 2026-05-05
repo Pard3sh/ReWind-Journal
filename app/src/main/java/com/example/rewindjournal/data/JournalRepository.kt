@@ -119,14 +119,32 @@ class JournalRepository(private val journalDao: JournalDao) {
     }
 
     suspend fun deleteFolder(folder: Folder) {
+        val uid = auth.currentUser?.uid ?: return
+
+        // Get entries that belong to this folder before deleting
+        val entriesToMove = journalDao.getEntriesByFolderSync(folder.id)
+
+        // Delete from local Room DB (FK with SET_NULL)
         journalDao.deleteFolder(folder)
 
-        val uid = auth.currentUser?.uid ?: return
-        db.collection("users")
+        // Update Firestore entries (folderId = null)
+        val batch = db.batch()
+        entriesToMove.forEach { entry ->
+            val entryRef = db.collection("users")
+                .document(uid)
+                .collection("entries")
+                .document(entry.id)
+            batch.update(entryRef, "folderId", null)
+        }
+
+        // 4. Delete the folder from Firestore
+        val folderRef = db.collection("users")
             .document(uid)
             .collection("folders")
             .document(folder.id)
-            .delete()
+        batch.delete(folderRef)
+
+        batch.commit()
     }
 
     suspend fun deleteEntry(entry: JournalEntry) {

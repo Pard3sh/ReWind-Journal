@@ -69,6 +69,9 @@ interface JournalDao {
     @Query("SELECT * FROM journal_entries WHERE folderId = :folderId AND userId = :currentUserId ORDER BY timestamp DESC")
     fun getEntriesByFolder(folderId: String, currentUserId: String): Flow<List<JournalEntry>>
 
+    @Query("SELECT * FROM journal_entries WHERE folderId = :folderId")
+    suspend fun getEntriesByFolderSync(folderId: String): List<JournalEntry>
+
     @Query("SELECT * FROM journal_entries WHERE id = :id")
     suspend fun getEntryById(id: String): JournalEntry?
 
